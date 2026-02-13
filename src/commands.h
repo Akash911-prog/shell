@@ -7,4 +7,6 @@ int type(char tokens[][50]);
 
 char *get_var(const char *var);
 
+int find_file(char filename[]);
+
 #endif

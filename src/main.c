@@ -51,14 +51,35 @@ int main()
 
             if (tokens[0][0] == VAR_IDENTIFIER)
             {
+                // Check if there's actually a variable name after $
+                if (tokens[0][1] == '\0')
+                {
+                    printf("Error: no variable name specified\n");
+                    continue;
+                }
+
+                // gets the variable name after #
                 char *var = tokens[0] + 1;
+
+                // gets the value of the variable as a pointer to the copied value of the env variable.
+                // it uses malloc to free up the space after use.
                 char *value = get_var(var);
+
                 if (value != NULL)
                 {
                     printf("%s\n", value);
-                    continue;
+                    free(value); // frees the malloc memory
                 }
-                printf("%s: variable not found\n", var);
+                else
+                {
+                    printf("%s: variable not found\n", var);
+                }
+                continue;
+            }
+
+            if (strcmp(tokens[0], "search") == 0)
+            {
+                find_file(tokens[1]);
                 continue;
             }
 
