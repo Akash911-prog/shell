@@ -24,12 +24,19 @@ int type(char tokens[][50])
     {
         if (cmd_info->type == BUILT_IN)
         {
-            printf("%s is a shell builtin command\n", cmd_info->name);
+            printf("BuiltIn\n");
         }
         else // Handle other types
         {
             printf("%s is an external command\n", cmd_info->name);
         }
+        return 0;
+    }
+    char *file = find_file(tokens[1]);
+    if (file != NULL)
+    {
+        printf("%s\n", file);
+        free(file);
         return 0;
     }
     printf("%s: not found\n", tokens[1]);
@@ -51,7 +58,7 @@ char *get_var(const char *var)
     return NULL;
 }
 
-int find_file(char filename[])
+char *find_file(char filename[])
 {
     char *fullpath = get_var("PATH");
 
@@ -60,14 +67,11 @@ int find_file(char filename[])
         char *filepath = recursive_file_search(fullpath, filename);
         if (filepath != NULL)
         {
-            printf("%s\n", filepath);
-            free(filepath);
             free(fullpath);
-            return 0;
+            return filepath;
         }
 
-        printf("%s not found\n", filename);
         free(fullpath);
-        return 1;
+        return NULL;
     }
 }

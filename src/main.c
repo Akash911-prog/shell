@@ -77,9 +77,16 @@ int main()
                 continue;
             }
 
-            if (strcmp(tokens[0], "search") == 0)
+            if (strcmp(tokens[0], "which") == 0)
             {
-                find_file(tokens[1]);
+                char *file = find_file(tokens[1]);
+                if (file != NULL)
+                {
+                    printf("%s\n", file);
+                    free(file);
+                    continue;
+                }
+                printf("%s not found\n", tokens[1]);
                 continue;
             }
 

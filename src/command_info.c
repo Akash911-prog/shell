@@ -16,6 +16,7 @@ Command command_metadata[] = {
 Command *commands[MAX_COMMANDS] = {
     &command_metadata[0],
     &command_metadata[1],
+    &command_metadata[2],
 };
 
 Command *get_command_info(char *name)
