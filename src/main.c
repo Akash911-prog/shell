@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "commands.h"
+
+#define VAR_IDENTIFIER '#'
 
 void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens);
 
 int main()
 {
+    setbuf(stdout, NULL);
     while (1)
     {
         // command token is tokens[0]. keeps this in mind. this word will be used a lot
@@ -33,16 +37,31 @@ int main()
             if (strcmp(tokens[0], "echo") == 0)
             {
                 // prints rest of the tokens except the command token
-                for (int i = 1; i < no_of_tokens; i++)
-                {
-                    printf("%s ", tokens[i]);
-                    if (i == (no_of_tokens - 1))
-                    {
-                        printf("\n");
-                    }
-                }
+                echo(tokens, no_of_tokens);
                 continue;
             }
+
+            // type command
+            if (strcmp(tokens[0], "type") == 0)
+            {
+                // prints the type of the command passed as argument
+                type(tokens);
+                continue;
+            }
+
+            if (tokens[0][0] == VAR_IDENTIFIER)
+            {
+                char *var = tokens[0] + 1;
+                char *value = get_var(var);
+                if (value != NULL)
+                {
+                    printf("%s\n", value);
+                    continue;
+                }
+                printf("%s: variable not found\n", var);
+                continue;
+            }
+
             printf("%s: cmd not found\n", tokens[0]);
         }
     }
