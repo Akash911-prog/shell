@@ -1,12 +1,16 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-void echo(char tokens[][50], int no_of_tokens);
+int dummy(char tokens[][50], int no_of_tokens);
 
-int type(char tokens[][50]);
+int echo(char tokens[][50], int no_of_tokens);
 
-char *get_var(const char *var);
+int type(char tokens[][50], int no_of_tokens);
 
-char *find_file(char filename[]);
+int which(char tokens[][50], int no_of_tokens);
+
+int variable_handler(char var_name[]);
+
+void execute(char *filepath);
 
 #endif

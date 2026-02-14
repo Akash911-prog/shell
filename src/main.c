@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "commands.h"
 #include "command_info.h"
+#include "commands.h"
+#include "utils.h"
 
 #define VAR_IDENTIFIER '$'
 
@@ -27,71 +28,40 @@ int main()
             char tokens[50][50]; // tokens array contains all splited tokens
 
             tokenize_cmd(cmd, tokens, &no_of_tokens);
+            int command_found = 0;
 
-            // exit command
+            int i = 0;
+
             if (strcmp(tokens[0], "exit") == 0)
             {
                 exit(0);
             }
-
-            // echo command
-            if (strcmp(tokens[0], "echo") == 0)
-            {
-                // prints rest of the tokens except the command token
-                echo(tokens, no_of_tokens);
-                continue;
-            }
-
-            // type command
-            if (strcmp(tokens[0], "type") == 0)
-            {
-                // prints the type of the command passed as argument
-                type(tokens);
-                continue;
-            }
-
             if (tokens[0][0] == VAR_IDENTIFIER)
             {
-                // Check if there's actually a variable name after $
-                if (tokens[0][1] == '\0')
-                {
-                    printf("Error: no variable name specified\n");
-                    continue;
-                }
-
-                // gets the variable name after #
-                char *var = tokens[0] + 1;
-
-                // gets the value of the variable as a pointer to the copied value of the env variable.
-                // it uses malloc to free up the space after use.
-                char *value = get_var(var);
-
-                if (value != NULL)
-                {
-                    printf("%s\n", value);
-                    free(value); // frees the malloc memory
-                }
-                else
-                {
-                    printf("%s: variable not found\n", var);
-                }
+                variable_handler(tokens[0]);
                 continue;
             }
-
-            if (strcmp(tokens[0], "which") == 0)
+            while (commands[i] != NULL)
             {
-                char *file = find_file(tokens[1]);
-                if (file != NULL)
+                if (strcmp(tokens[0], commands[i]->name) == 0)
                 {
-                    printf("%s\n", file);
-                    free(file);
+                    command_found = 1;
+                    commands[i]->handler(tokens, no_of_tokens);
+                    break;
+                }
+                i++;
+            }
+            if (command_found == 0)
+            {
+                char *filepath = find_file(tokens[0]);
+                if (filepath != NULL)
+                {
+                    execute(filepath);
                     continue;
                 }
-                printf("%s not found\n", tokens[1]);
-                continue;
-            }
 
-            printf("%s: cmd not found\n", tokens[0]);
+                printf("%s: not found\n", tokens[0]);
+            }
         }
     }
     return 0;

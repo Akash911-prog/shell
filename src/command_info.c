@@ -2,15 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "command_info.h"
-
-#define MAX_COMMANDS 30
+#include "commands.h"
 
 // all commands metadata
 Command command_metadata[] = {
-    {.name = "echo", .type = BUILT_IN, .desc = "repeats the args", .help = "echo <string to print>", .argc = 1},
-    {.name = "type", .type = BUILT_IN, .desc = "returns type of the function", .help = "type <command>", .argc = 1},
-    {.name = "which", .type = BUILT_IN, .desc = "searches a specific executable in the path", .help = "which <executable_to_search>", .argc = 1},
-    {.name = "exit", .type = BUILT_IN, .desc = "closes the shell", .help = "exit", .argc = 0},
+    {.name = "echo", .type = BUILT_IN, .desc = "repeats the args", .help = "echo <string to print>", .argc = 1, .handler = echo},
+    {.name = "type", .type = BUILT_IN, .desc = "returns type of the function", .help = "type <command>", .argc = 1, .handler = type},
+    {.name = "which", .type = BUILT_IN, .desc = "searches a specific executable in the path", .help = "which <executable_to_search>", .argc = 1, .handler = which},
+    {.name = "exit", .type = BUILT_IN, .desc = "closes the shell", .help = "exit", .argc = 0, .handler = dummy},
 };
 
 // array of pointer to the commands metadata

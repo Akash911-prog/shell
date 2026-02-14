@@ -112,3 +112,36 @@ char *recursive_file_search(char fullpath[], char filename[])
 
     return NULL; // Not found
 }
+
+char *find_file(char filename[])
+{
+    char *fullpath = get_var("PATH");
+
+    if (fullpath != NULL)
+    {
+        char *filepath = recursive_file_search(fullpath, filename);
+        if (filepath != NULL)
+        {
+            free(fullpath);
+            return filepath; // free it after use
+        }
+
+        free(fullpath);
+        return NULL;
+    }
+}
+
+char *get_var(const char *var)
+{
+    const char *env_v = getenv(var);
+    if (env_v != NULL)
+    {
+        char *env_v_copy = malloc(strlen(env_v) + 1);
+        if (env_v_copy != NULL)
+        {
+            strcpy(env_v_copy, env_v);
+            return env_v_copy;
+        }
+    }
+    return NULL;
+}

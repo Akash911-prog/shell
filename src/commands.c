@@ -5,7 +5,13 @@
 #include "command_info.h"
 #include "utils.h"
 
-void echo(char tokens[][50], int no_of_tokens)
+int dummy(char tokens[][50], int no_of_tokens)
+// dummy placeholder function for the handler argument of exit command
+{
+    return 0;
+}
+
+int echo(char tokens[][50], int no_of_tokens)
 {
     for (int i = 1; i < no_of_tokens; i++)
     {
@@ -15,9 +21,10 @@ void echo(char tokens[][50], int no_of_tokens)
             printf("\n");
         }
     }
+    return 0;
 }
 
-int type(char tokens[][50])
+int type(char tokens[][50], int no_of_tokens)
 {
     Command *cmd_info = get_command_info(tokens[1]); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
     if (cmd_info != NULL)
@@ -43,35 +50,49 @@ int type(char tokens[][50])
     return 1;
 }
 
-char *get_var(const char *var)
+int which(char tokens[][50], int no_of_tokens)
 {
-    const char *env_v = getenv(var);
-    if (env_v != NULL)
+    char *file = find_file(tokens[1]);
+    if (file != NULL)
     {
-        char *env_v_copy = malloc(strlen(env_v) + 1);
-        if (env_v_copy != NULL)
-        {
-            strcpy(env_v_copy, env_v);
-            return env_v_copy;
-        }
+        printf("%s\n", file);
+        free(file);
+        return 0;
     }
-    return NULL;
+    printf("%s not found\n", file);
+    return 1;
 }
 
-char *find_file(char filename[])
+int variable_handler(char var_name[])
 {
-    char *fullpath = get_var("PATH");
-
-    if (fullpath != NULL)
+    // Check if there's actually a variable name after $
+    if (var_name[1] == '\0')
     {
-        char *filepath = recursive_file_search(fullpath, filename);
-        if (filepath != NULL)
-        {
-            free(fullpath);
-            return filepath;
-        }
-
-        free(fullpath);
-        return NULL;
+        printf("Error: no variable name specified\n");
+        return 0;
     }
+
+    // gets the variable name after #
+    char *var = var_name + 1;
+
+    // gets the value of the variable as a pointer to the copied value of the env variable.
+    // it uses malloc to free up the space after use.
+    char *value = get_var(var);
+
+    if (value != NULL)
+    {
+        printf("%s\n", value);
+        free(value); // frees the malloc memory
+        return 0;
+    }
+    else
+    {
+        printf("%s: variable not found\n", var);
+    }
+    return 1;
+}
+
+void execute(char *filepath)
+{
+    printf("EXECUTE\n");
 }

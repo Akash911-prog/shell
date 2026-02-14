@@ -1,6 +1,7 @@
 #ifndef COMMAND_INFO_H
 #define COMMAND_INFO_H
 
+#define MAX_COMMANDS 30
 typedef enum
 {
     BUILT_IN
@@ -13,7 +14,12 @@ typedef struct
     char desc[50];
     char help[50];
     int argc;
+    int (*handler)(char tokens[][50], int no_of_tokens);
 } Command;
+
+extern Command command_metadata[];
+
+extern Command *commands[MAX_COMMANDS];
 
 Command *get_command_info(char *name);
 
