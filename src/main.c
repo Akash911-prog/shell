@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "commands.h"
+#include "command_info.h"
 
-#define VAR_IDENTIFIER '#'
+#define VAR_IDENTIFIER '$'
 
 void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens);
 
@@ -18,7 +19,7 @@ int main()
         cmd[0] = '\0';
         printf("$ ");
 
-        if (fgets(cmd, sizeof(cmd), stdin) != NULL)
+        if (fgets(cmd, sizeof(cmd), stdin) != NULL) // takes input from stdin
         {
             cmd[strcspn(cmd, "\n")] = '\0'; // removes \n from the the cmd string
 

@@ -9,6 +9,7 @@
 Command command_metadata[] = {
     {.name = "echo", .type = BUILT_IN, .desc = "repeats the args", .help = "echo <string to print>", .argc = 1},
     {.name = "type", .type = BUILT_IN, .desc = "returns type of the function", .help = "type <command>", .argc = 1},
+    {.name = "which", .type = BUILT_IN, .desc = "searches a specific executable in the path", .help = "which <executable_to_search>", .argc = 1},
     {.name = "exit", .type = BUILT_IN, .desc = "closes the shell", .help = "exit", .argc = 0},
 };
 
@@ -17,6 +18,7 @@ Command *commands[MAX_COMMANDS] = {
     &command_metadata[0],
     &command_metadata[1],
     &command_metadata[2],
+    &command_metadata[3],
 };
 
 Command *get_command_info(char *name)
