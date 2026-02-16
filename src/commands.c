@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "commands.h"
 #include "command_info.h"
 #include "utils.h"
@@ -8,8 +9,12 @@
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
+#include <direct.h>
+#define Chdir _chdir
 #else
 #define CLEAR_COMMAND "clear"
+#include <unistd.h>
+#define Chdir chdir
 #endif
 
 int dummy(char tokens[][50], int no_of_tokens)
@@ -79,7 +84,61 @@ int pwd(char tokens[][50], int no_of_tokens)
 {
     printf("\nPath\n");
     printf("----\n");
-    printf("%s\n\n\n", Variables.get("CWD"));
+    printf("%s\n\n\n", Variables.get("PWD"));
+}
+
+int cd(char tokens[][50], int no_of_tokens)
+{
+    // No argument - do nothing
+    if (no_of_tokens < 2)
+    {
+        return 0;
+    }
+
+    char target_path[1024];
+
+    // Handle ~ paths
+    if (tokens[1][0] == '~')
+    {
+        char *home = Variables.get("HOME");
+        if (home == NULL)
+        {
+            fprintf(stderr, "cd: HOME not set\n");
+            return 1;
+        }
+
+        if (tokens[1][1] == '\0')
+        {
+            // Just "~"
+            strcpy(target_path, home);
+        }
+        else if (tokens[1][1] == '/')
+        {
+            // "~/path"
+            snprintf(target_path, sizeof(target_path), "%s%s", home, tokens[1] + 1);
+        }
+        else
+        {
+            // Invalid like "~abc"
+            strcpy(target_path, tokens[1]);
+        }
+    }
+    else
+    {
+        // Use the path as-is (absolute or relative)
+        strcpy(target_path, tokens[1]);
+    }
+
+    // Try to change directory
+    if (Chdir(target_path) == 0)
+    {
+        set_pwd();
+        init_prompt();
+        return 0;
+    }
+
+    printf("cd: %s: No such file or directory\n", tokens[1]);
+    return 1;
 }
 
 int variable_handler(char var_name[])

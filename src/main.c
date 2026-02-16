@@ -7,23 +7,28 @@
 #include "variables.h"
 
 #define VAR_IDENTIFIER '$'
+#ifdef _WIN32
+#define PATH_SEP "\\"
+#else
+#define PATH_SEP "/"
+#endif
 
 int main()
 {
-    setbuf(stdout, NULL);
     Variables.init(32);
+    setbuf(stdout, NULL);
     init_prompt();
-    char *prompt = Variables.get("PS1");
     while (1)
     {
         // command token is tokens[0]. keeps this in mind. this word will be used a lot
         // command and prompt initialization
         char cmd[1024];
         cmd[0] = '\0';
-        printf("%s", prompt);
+        printf("%s", Variables.get("PS1"));
 
         if (fgets(cmd, sizeof(cmd), stdin) != NULL) // takes input from stdin
         {
+            printf("\033[0m");
             cmd[strcspn(cmd, "\n")] = '\0'; // removes \n from the the cmd string
 
             int no_of_tokens = 0;
@@ -61,6 +66,14 @@ int main()
                 {
                     execute(filepath, tokens, no_of_tokens);
                     free(filepath);
+                    continue;
+                }
+
+                if ((tokens[0][0] == '.') && (tokens[0][1] == '/' || tokens[0][1] == '\\')) // checks if the command in current directory executable
+                {
+                    char buffer[1024];
+                    snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("CWD"), PATH_SEP, (tokens[0] + 2));
+                    system(buffer);
                     continue;
                 }
 

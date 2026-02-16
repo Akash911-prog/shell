@@ -201,29 +201,18 @@ void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens)
     *no_of_tokens = j;
 }
 
-void get_cwd()
+void set_pwd()
 {
     char buffer[1024];
     if (GetCWD(buffer, FILENAME_MAX) != NULL)
     {
-        Variables.set("CWD", buffer);
+        Variables.set("PWD", buffer);
+        return;
     }
+    Variables.set("PWD", Variables.get("HOME"));
 }
 
-void init_prompt()
-{
-    get_cwd();
-    get_username();
-    get_home_directory();
-    get_hostname();
-    char buffer[1024];
-
-    snprintf(buffer, sizeof(buffer), "\033[32m%s@\033[36m%s \033[96;1m%s\n$\033[0m ", Variables.get("USER"), Variables.get("HOST"), Variables.get("CWD")); // 96, 36, 32
-
-    Variables.set("PS1", buffer);
-}
-
-void get_username()
+void set_username()
 {
 #ifdef _WIN32 // windows
     char username[UNLEN + 1];
@@ -244,7 +233,7 @@ void get_username()
 #endif
 }
 
-void get_hostname()
+void set_hostname()
 {
 #ifdef _WIN32
     static char hostname[MAX_COMPUTERNAME_LENGTH + 1];
@@ -264,7 +253,7 @@ void get_hostname()
 #endif
 }
 
-void get_home_directory()
+void set_home_directory()
 {
 #ifdef _WIN32
     // Windows: Use USERPROFILE environment variable
@@ -301,4 +290,48 @@ void get_home_directory()
         Variables.set("HOME", pw->pw_dir);
     }
 #endif
+}
+
+// Helper function to escape backslashes
+void escape_backslashes(const char *src, char *dst, size_t dst_size)
+{
+    size_t j = 0;
+    for (size_t i = 0; src[i] != '\0' && j < dst_size - 2; i++)
+    {
+        if (src[i] == '\\')
+        {
+            dst[j++] = '\\'; // Add extra backslash
+            dst[j++] = '\\';
+        }
+        else
+        {
+            dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
+void init_prompt()
+{
+    set_home_directory();
+    set_pwd();
+    set_username();
+    set_hostname();
+
+    char *host = Variables.get("HOST");
+    char *pwd = Variables.get("PWD");
+    char *user = Variables.get("USER");
+
+    if (!user)
+        user = "user";
+    if (!host)
+        host = "localhost";
+    if (!pwd)
+        pwd = "~";
+
+    char buffer[2048];
+
+    snprintf(buffer, sizeof(buffer), "\033[32m%s@\033[35m%s \033[36;1m%s\n$\033[33;22m ", user, host, pwd); // ansi color code
+
+    Variables.set("PS1", buffer);
 }
