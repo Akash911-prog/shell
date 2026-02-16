@@ -1,3 +1,4 @@
+// variables.h
 #ifndef VARIABLES_H
 #define VARIABLES_H
 
@@ -5,23 +6,31 @@ typedef struct variable
 {
     char *name;
     char *value;
-    struct variable *next; // Linked list for chaining collisions
+    struct variable *next;
 } Variable;
+
+#include <stddef.h>
 
 typedef struct variable_table
 {
-    Variable **buckets; // Array of pointers to variable chains
-    size_t capacity;    // Number of buckets
-    size_t count;       // Total number of variables stored
+    Variable **buckets;
+    size_t capacity;
+    size_t count;
 } Variable_table;
 
-#define INITIAL_CAPACITY 32
+// variables.h
+typedef struct variableapi
+{
+    void (*init)(size_t capacity);
+    void (*set)(char *name, char *value);
+    char *(*get)(char *name);
+    void (*delete)(char *name);
+    void (*destroy)(); // Better name than delete_table
+} VariableAPI;
 
-// Function declarations
-Variable_table *create_table(size_t capacity);
-void set_variable(Variable_table *table, const char *name, const char *value);
-char *get_variable(Variable_table *table, const char *name);
-void delete_variable(Variable_table *table, const char *name);
-void free_table(Variable_table *table);
+// Global API instance
+extern VariableAPI Variables;
+
+#define INITIAL_CAPACITY 32
 
 #endif

@@ -1,13 +1,16 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
+// variables.c
 #include "variables.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 #define FNV_PRIME 1099511628211ULL
 #define FNV_OFFSET_BASIS 14695981039346656037ULL
 
-size_t hash(const char *data, size_t capacity)
+// Global table (hidden from users)
+static Variable_table *global_table = NULL;
+
+static size_t hash(const char *data, size_t capacity)
 {
     uint64_t hash = FNV_OFFSET_BASIS;
     int c;
@@ -20,47 +23,54 @@ size_t hash(const char *data, size_t capacity)
     return index;
 }
 
-Variable_table *create_table(size_t capacity) // creates the table with dynamic memory allocation
+// Implementation functions
+static void _init(size_t capacity)
 {
-    Variable_table *table = malloc(sizeof(Variable_table));
-    table->buckets = calloc(capacity, sizeof(Variable *)); // zeroes the garbage values.
-    table->capacity = capacity;
-    table->count = 0;
-    return table;
+    if (global_table != NULL)
+    {
+        // Already initialized, maybe free first?
+        return;
+    }
+    global_table = malloc(sizeof(Variable_table));
+    global_table->buckets = calloc(capacity, sizeof(Variable *));
+    global_table->capacity = capacity;
+    global_table->count = 0;
 }
-void set_variable(Variable_table *table, const char *name, const char *value)
-{
-    size_t index = hash(name, table->capacity);
-    Variable *current = table->buckets[index];
 
-    // if variable already exist (update it)
+static void _set(char *name, char *value)
+{
+    if (global_table == NULL)
+        return; // Not initialized
+
+    size_t index = hash(name, global_table->capacity);
+    Variable *current = global_table->buckets[index];
+
     while (current != NULL)
     {
         if (strcmp(current->name, name) == 0)
         {
             free(current->value);
-            current->value = value;
+            current->value = strdup(value);
             return;
         }
         current = current->next;
     }
 
-    // variable creation
-    Variable *new_var = malloc(sizeof(Variable)); // allocates memory for new variable
-
-    new_var->name = strdup(name); // assigns values
+    Variable *new_var = malloc(sizeof(Variable));
+    new_var->name = strdup(name);
     new_var->value = strdup(value);
-
-    // inserts the new variable in the linked list bucket
-    new_var->next = current;
-    table->buckets[index] = new_var;
-
-    table->count++;
+    new_var->next = global_table->buckets[index];
+    global_table->buckets[index] = new_var;
+    global_table->count++;
 }
-char *get_variable(Variable_table *table, const char *name)
+
+static char *_get(char *name)
 {
-    size_t index = hash(name, table->capacity);
-    Variable *current = table->buckets[index];
+    if (global_table == NULL)
+        return NULL;
+
+    size_t index = hash(name, global_table->capacity);
+    Variable *current = global_table->buckets[index];
 
     while (current != NULL)
     {
@@ -73,14 +83,65 @@ char *get_variable(Variable_table *table, const char *name)
 
     return NULL;
 }
-void delete_variable(Variable_table *table, const char *name)
+
+static void _delete(char *name)
 {
-    size_t index = hash(name, table->capacity)
+    if (global_table == NULL)
+        return;
+
+    size_t index = hash(name, global_table->capacity);
+    Variable *current = global_table->buckets[index];
+    Variable *prev = NULL;
+
+    while (current != NULL)
     {
+        if (strcmp(current->name, name) == 0)
+        {
+            if (prev == NULL)
+            {
+                global_table->buckets[index] = current->next;
+            }
+            else
+            {
+                prev->next = current->next;
+            }
+            free(current->name);
+            free(current->value);
+            free(current);
+            global_table->count--;
+            return;
+        }
+        prev = current;
+        current = current->next;
     }
 }
-void free_table(Variable_table *table)
+
+static void _destroy()
 {
-    free(table->buckets);
-    free(table);
+    if (global_table == NULL)
+        return;
+
+    for (size_t i = 0; i < global_table->capacity; i++)
+    {
+        Variable *current = global_table->buckets[i];
+        while (current != NULL)
+        {
+            Variable *next = current->next;
+            free(current->name);
+            free(current->value);
+            free(current);
+            current = next;
+        }
+    }
+    free(global_table->buckets);
+    free(global_table);
+    global_table = NULL;
 }
+
+// Global API instance
+VariableAPI Variables = {
+    .init = _init,
+    .set = _set,
+    .get = _get,
+    .delete = _delete,
+    .destroy = _destroy};

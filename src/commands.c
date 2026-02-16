@@ -4,6 +4,7 @@
 #include "commands.h"
 #include "command_info.h"
 #include "utils.h"
+#include "variables.h"
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -74,6 +75,11 @@ int clear(char tokens[][50], int no_of_tokens)
     system(CLEAR_COMMAND);
 }
 
+int pwd(char tokens[][50], int no_of_tokens)
+{
+    system("$pwd");
+}
+
 int variable_handler(char var_name[])
 {
     // Check if there's actually a variable name after $
@@ -96,10 +102,16 @@ int variable_handler(char var_name[])
         free(value); // frees the malloc memory
         return 0;
     }
-    else
+
+    value = Variables.get(var);
+
+    if (value != NULL)
     {
-        printf("%s: variable not found\n", var);
+        printf("%s\n", value);
+        return 0;
     }
+    printf("%s: Variable not found\n", var);
+
     return 1;
 }
 

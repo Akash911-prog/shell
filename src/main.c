@@ -4,11 +4,14 @@
 #include "command_info.h"
 #include "commands.h"
 #include "utils.h"
+#include "variables.h"
 
 #define VAR_IDENTIFIER '$'
 
 int main()
 {
+    Variables.init(32);
+    Variables.set("pwd", "C:/User/user");
     setbuf(stdout, NULL);
     while (1)
     {
