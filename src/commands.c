@@ -77,7 +77,9 @@ int clear(char tokens[][50], int no_of_tokens)
 
 int pwd(char tokens[][50], int no_of_tokens)
 {
-    system("$pwd");
+    printf("\nPath\n");
+    printf("----\n");
+    printf("%s\n\n\n", Variables.get("CWD"));
 }
 
 int variable_handler(char var_name[])

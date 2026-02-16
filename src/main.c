@@ -10,16 +10,17 @@
 
 int main()
 {
-    Variables.init(32);
-    Variables.set("pwd", "C:/User/user");
     setbuf(stdout, NULL);
+    Variables.init(32);
+    init_prompt();
+    char *prompt = Variables.get("PS1");
     while (1)
     {
         // command token is tokens[0]. keeps this in mind. this word will be used a lot
         // command and prompt initialization
         char cmd[1024];
         cmd[0] = '\0';
-        printf("$ ");
+        printf("%s", prompt);
 
         if (fgets(cmd, sizeof(cmd), stdin) != NULL) // takes input from stdin
         {

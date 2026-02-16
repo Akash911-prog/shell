@@ -4,11 +4,20 @@
 #include <dirent.h>
 #include <io.h>
 #include "utils.h"
+#include "variables.h"
 
 #ifdef _WIN32
 #define PATH_SEP "\\"
+#include <direct.h>
+#include <windows.h>
+#include <Lmcons.h>
+#define GetCWD _getcwd
 #else
 #define PATH_SEP "/"
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#define GetCurrentDir getcwd
 #endif
 
 #define MAX_PATH_LEN 1024
@@ -190,4 +199,106 @@ void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens)
     }
 
     *no_of_tokens = j;
+}
+
+void get_cwd()
+{
+    char buffer[1024];
+    if (GetCWD(buffer, FILENAME_MAX) != NULL)
+    {
+        Variables.set("CWD", buffer);
+    }
+}
+
+void init_prompt()
+{
+    get_cwd();
+    get_username();
+    get_home_directory();
+    get_hostname();
+    char buffer[1024];
+
+    snprintf(buffer, sizeof(buffer), "\033[32m%s@\033[36m%s \033[96;1m%s\n$\033[0m ", Variables.get("USER"), Variables.get("HOST"), Variables.get("CWD")); // 96, 36, 32
+
+    Variables.set("PS1", buffer);
+}
+
+void get_username()
+{
+#ifdef _WIN32 // windows
+    char username[UNLEN + 1];
+    DWORD username_len = UNLEN + 1;
+
+    if (GetUserName(username, &username_len))
+    {
+        Variables.set("USER", username);
+    }
+#else // linux/macos
+    uid_t uid = geteuid();
+    struct passwd *p = getpwuid(uid);
+
+    if (p)
+    {
+        Variables.set("USER", p->pw_name);
+    }
+#endif
+}
+
+void get_hostname()
+{
+#ifdef _WIN32
+    static char hostname[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = MAX_COMPUTERNAME_LENGTH + 1;
+
+    if (GetComputerName(hostname, &size))
+    {
+        Variables.set("HOST", hostname);
+    }
+#else
+    static char hostname[256];
+
+    if (gethostname(hostname, sizeof(hostname)) == 0)
+    {
+        Variables.set("HOST", hostname);
+    }
+#endif
+}
+
+void get_home_directory()
+{
+#ifdef _WIN32
+    // Windows: Use USERPROFILE environment variable
+    char *home = getenv("USERPROFILE");
+    if (home == NULL)
+    {
+        // Fallback: combine HOMEDRIVE and HOMEPATH
+        char *homedrive = getenv("HOMEDRIVE"); // Usually "C:"
+        char *homepath = getenv("HOMEPATH");   // Usually "\Users\username"
+
+        if (homedrive && homepath)
+        {
+            static char full_path[MAX_PATH];
+            snprintf(full_path, MAX_PATH, "%s%s", homedrive, homepath);
+            Variables.set("HOME", full_path);
+            return;
+        }
+    }
+    Variables.set("HOME", home);
+#else
+    // Unix/Linux/Mac: Use HOME environment variable
+    char *home = getenv("HOME");
+    if (home != NULL)
+    {
+        Variables.set("HOME", home);
+        return;
+    }
+
+    // Fallback: Get from password database
+    uid_t uid = getuid();
+    struct passwd *pw = getpwuid(uid);
+    if (pw)
+    {
+        Variables.set("HOME", pw->pw_dir);
+    }
+#endif
 }
