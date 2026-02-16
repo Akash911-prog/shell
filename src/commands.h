@@ -9,8 +9,10 @@ int type(char tokens[][50], int no_of_tokens);
 
 int which(char tokens[][50], int no_of_tokens);
 
+int clear(char tokens[][50], int no_of_tokens);
+
 int variable_handler(char var_name[]);
 
-void execute(char *filepath);
+int execute(char *filepath, char tokens[][50], int no_of_tokens);
 
 #endif

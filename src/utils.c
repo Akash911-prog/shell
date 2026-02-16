@@ -145,3 +145,49 @@ char *get_var(const char *var)
     }
     return NULL;
 }
+
+void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens)
+{
+    int i = 0; // index of cmd
+    int j = 0; // index of tokens
+    int k = 0; // index inside current token
+
+    int inside_quote = 0; // flag for inside_quotes state
+
+    while (cmd[i] != '\0')
+    {
+        if (cmd[i] == '"')
+        {
+            inside_quote = !inside_quote;
+            i++;
+            continue;
+        }
+
+        // if whitespace and not inside quotes
+        if ((cmd[i] == ' ') & !inside_quote)
+        {
+            // if index of token is > 0 then ends the ongoing token
+            if (k > 0)
+            {
+                tokens[j][k] = '\0';
+                j++;
+                k = 0;
+            }
+            i++; // increase cmd index
+            continue;
+        }
+
+        // adds the current cmd[i] to the current ongoing token
+        tokens[j][k++] = cmd[i];
+        i++;
+    }
+
+    // ends the last token if any
+    if (k > 0)
+    {
+        tokens[j][k] = '\0';
+        j++;
+    }
+
+    *no_of_tokens = j;
+}

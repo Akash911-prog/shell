@@ -5,6 +5,12 @@
 #include "command_info.h"
 #include "utils.h"
 
+#ifdef _WIN32
+#define CLEAR_COMMAND "cls"
+#else
+#define CLEAR_COMMAND "clear"
+#endif
+
 int dummy(char tokens[][50], int no_of_tokens)
 // dummy placeholder function for the handler argument of exit command
 {
@@ -63,6 +69,11 @@ int which(char tokens[][50], int no_of_tokens)
     return 1;
 }
 
+int clear(char tokens[][50], int no_of_tokens)
+{
+    system(CLEAR_COMMAND);
+}
+
 int variable_handler(char var_name[])
 {
     // Check if there's actually a variable name after $
@@ -92,7 +103,21 @@ int variable_handler(char var_name[])
     return 1;
 }
 
-void execute(char *filepath)
+int execute(char *filepath, char tokens[][50], int no_of_tokens)
 {
-    printf("EXECUTE\n");
+    if (no_of_tokens > 1)
+    {
+        char exec_string[1024];
+        strcpy(exec_string, filepath);
+        for (size_t i = 1; i < (no_of_tokens); i++)
+        {
+            strcat(exec_string, " ");
+            strcat(exec_string, tokens[i]);
+        }
+
+        system(exec_string);
+        return 0;
+    }
+    system(filepath);
+    return 0;
 }

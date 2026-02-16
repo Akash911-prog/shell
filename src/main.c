@@ -7,8 +7,6 @@
 
 #define VAR_IDENTIFIER '$'
 
-void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens);
-
 int main()
 {
     setbuf(stdout, NULL);
@@ -36,79 +34,36 @@ int main()
             {
                 exit(0);
             }
-            if (tokens[0][0] == VAR_IDENTIFIER)
+            if (tokens[0][0] == VAR_IDENTIFIER) // if its a variable
             {
                 variable_handler(tokens[0]);
                 continue;
             }
+            // loops through all commands metadata and compares there name with the inputed command.
             while (commands[i] != NULL)
             {
                 if (strcmp(tokens[0], commands[i]->name) == 0)
                 {
                     command_found = 1;
-                    commands[i]->handler(tokens, no_of_tokens);
+                    commands[i]->handler(tokens, no_of_tokens); // calls the handler function associated with the command. see commands_info.h for detailed description
                     break;
                 }
                 i++;
             }
             if (command_found == 0)
             {
-                char *filepath = find_file(tokens[0]);
+                char *filepath = find_file(tokens[0]); // return a file path string in malloc memory. so free it.
                 if (filepath != NULL)
                 {
-                    execute(filepath);
+                    execute(filepath, tokens, no_of_tokens);
+                    free(filepath);
                     continue;
                 }
 
+                // if nothing found. neither a command nor a executable.
                 printf("%s: not found\n", tokens[0]);
             }
         }
     }
     return 0;
-}
-
-void tokenize_cmd(char cmd[], char tokens[][50], int *no_of_tokens)
-{
-    int i = 0; // index of cmd
-    int j = 0; // index of tokens
-    int k = 0; // index inside current token
-
-    int inside_quote = 0; // flag for inside_quotes state
-
-    while (cmd[i] != '\0')
-    {
-        if (cmd[i] == '"')
-        {
-            inside_quote = !inside_quote;
-            i++;
-            continue;
-        }
-
-        // if whitespace and not inside quotes
-        if ((cmd[i] == ' ') & !inside_quote)
-        {
-            // if index of token is > 0 then ends the ongoing token
-            if (k > 0)
-            {
-                tokens[j][k] = '\0';
-                j++;
-                k = 0;
-            }
-            i++; // increase cmd index
-            continue;
-        }
-
-        // adds the current cmd[i] to the current ongoing token
-        tokens[j][k++] = cmd[i];
-        i++;
-    }
-
-    // ends the last token if any
-    if (k > 0)
-    {
-        tokens[j][k] = '\0';
-        j++;
-    }
-
-    *no_of_tokens = j;
 }
