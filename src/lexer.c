@@ -15,10 +15,16 @@
  *  "               Toggle is_quoted. Not added to raw. (continue)
  *  &&              Emit current word token + emit AND token. (continue)
  *  ||              Emit current word token + emit OR token. (continue)
+ *  2>>             Emit current word token + emit REDIRECT_ERR_APPEND. (continue)
+ *  2>              Emit current word token + emit REDIRECT_ERR. (continue)
  *  >>              Emit current word token + emit APPEND token. (continue)
  *  |               Emit current word token + emit PIPE token. (continue)
  *  >               Emit current word token + emit REDIRECT_OUT token. (continue)
  *  <               Emit current word token + emit REDIRECT_IN token. (continue)
+ *  &               Emit current word token + emit BACKGROUND token. (continue)
+ *  ;               Emit current word token + emit SEMICOLON token. (continue)
+ *  (               Emit current word token + emit LPAREN token. (continue)
+ *  )               Emit current word token + emit RPAREN token. (continue)
  *  \               Advance i to skip backslash, fall through to add next char.
  *  $               Set needs_expansion = true on current token, fall through.
  *  ~               Set needs_expansion = true on current token, fall through.
@@ -39,7 +45,6 @@ void lex(char *data, TokenList *token_list)
 
     while (data[i] != '\0')
     {
-
         // Whitespace - end current word token
         if (data[i] == ' ' && !is_literal && !is_quoted)
         {
@@ -72,6 +77,7 @@ void lex(char *data, TokenList *token_list)
                 if (k > 0)
                 {
                     token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
                     token_list->tokens[j].position = j;
                     j++;
                     k = 0;
@@ -100,6 +106,7 @@ void lex(char *data, TokenList *token_list)
                     if (k > 0)
                     {
                         token_list->tokens[j].raw[k] = '\0';
+                        token_list->tokens[j].type = TOKEN_WORD;
                         token_list->tokens[j].position = j;
                         j++;
                         k = 0;
@@ -148,6 +155,44 @@ void lex(char *data, TokenList *token_list)
                 continue;
             }
 
+            // STDERR REDIRECT APPEND 2>>
+            else if (data[i] == '2' && data[i + 1] == '>' && data[i + 2] == '>')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_REDIRECT_ERR_APPEND;
+                strcpy(token_list->tokens[j].raw, "2>>");
+                token_list->tokens[j].position = j;
+                j++;
+                i += 3;
+                continue;
+            }
+
+            // STDERR REDIRECT 2>
+            else if (data[i] == '2' && data[i + 1] == '>')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_REDIRECT_ERR;
+                strcpy(token_list->tokens[j].raw, "2>");
+                token_list->tokens[j].position = j;
+                j++;
+                i += 2;
+                continue;
+            }
+
             // APPEND >>
             else if (data[i] == '>' && data[i + 1] == '>')
             {
@@ -175,7 +220,6 @@ void lex(char *data, TokenList *token_list)
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
                     token_list->tokens[j].position = j;
-
                     j++;
                     k = 0;
                 }
@@ -195,13 +239,11 @@ void lex(char *data, TokenList *token_list)
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
                     token_list->tokens[j].position = j;
-
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_REDIRECT_OUT;
                 strcpy(token_list->tokens[j].raw, ">");
-                token_list->tokens[j].position = j;
                 token_list->tokens[j].position = j;
                 j++;
                 i++;
@@ -221,6 +263,82 @@ void lex(char *data, TokenList *token_list)
                 }
                 token_list->tokens[j].type = TOKEN_REDIRECT_IN;
                 strcpy(token_list->tokens[j].raw, "<");
+                token_list->tokens[j].position = j;
+                j++;
+                i++;
+                continue;
+            }
+
+            // BACKGROUND &
+            else if (data[i] == '&')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_BACKGROUND;
+                strcpy(token_list->tokens[j].raw, "&");
+                token_list->tokens[j].position = j;
+                j++;
+                i++;
+                continue;
+            }
+
+            // SEMICOLON ;
+            else if (data[i] == ';')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_SEMICOLON;
+                strcpy(token_list->tokens[j].raw, ";");
+                token_list->tokens[j].position = j;
+                j++;
+                i++;
+                continue;
+            }
+
+            // LPAREN (
+            else if (data[i] == '(')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_LPAREN;
+                strcpy(token_list->tokens[j].raw, "(");
+                token_list->tokens[j].position = j;
+                j++;
+                i++;
+                continue;
+            }
+
+            // RPAREN )
+            else if (data[i] == ')')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_RPAREN;
+                strcpy(token_list->tokens[j].raw, ")");
                 token_list->tokens[j].position = j;
                 j++;
                 i++;
