@@ -1,6 +1,8 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include <stdbool.h>
+
 typedef enum
 {
     TOKEN_WORD,
@@ -22,6 +24,7 @@ typedef struct
     bool is_quoted;       // Double quoted - expand vars but not globs
     bool is_literal;      // Single quoted - expand nothing
     bool needs_expansion; // Contains $VAR or * or ~
+    int position;
 } Token;
 
 typedef struct
@@ -30,6 +33,6 @@ typedef struct
     int count;
 } TokenList;
 
-void tokenize(char *data, TokenList tokens);
+void lex(char *data, TokenList *token_list);
 
 #endif

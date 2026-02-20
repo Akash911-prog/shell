@@ -5,6 +5,7 @@
 #include "commands.h"
 #include "utils.h"
 #include "variables.h"
+#include "lexer.h"
 
 #define VAR_IDENTIFIER '$'
 #ifdef _WIN32
@@ -34,6 +35,8 @@ int main()
             int no_of_tokens = 0;
             char tokens[50][50]; // tokens array contains all splited tokens
 
+            TokenList token_list = {0};
+
             tokenize_cmd(cmd, tokens, &no_of_tokens);
             int command_found = 0;
 
@@ -48,6 +51,17 @@ int main()
                 variable_handler(tokens[0]);
                 continue;
             }
+
+            if (strcmp(tokens[0], "lex") == 0)
+            {
+                lex(cmd, &token_list);
+                for (size_t i = 0; i < token_list.count; i++)
+                {
+                    printf("%s\n", token_list.tokens[i].raw);
+                }
+                continue;
+            }
+
             // loops through all commands metadata and compares there name with the inputed command.
             while (commands[i] != NULL)
             {
