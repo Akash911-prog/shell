@@ -3,9 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "commands.h"
-#include "command_info.h"
+#include "builtins.h"
 #include "utils.h"
 #include "variables.h"
+#include "lexer.h"
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -17,18 +18,18 @@
 #define Chdir chdir
 #endif
 
-int dummy(char tokens[][50], int no_of_tokens)
+int dummy(TokenList *token_list)
 // dummy placeholder function for the handler argument of exit command
 {
     return 0;
 }
 
-int echo(char tokens[][50], int no_of_tokens)
+int echo(TokenList *token_list)
 {
-    for (int i = 1; i < no_of_tokens; i++)
+    for (int i = 1; i < token_list->count; i++)
     {
-        printf("%s ", tokens[i]);
-        if (i == (no_of_tokens - 1))
+        printf("%s ", token_list->tokens[i].raw);
+        if (i == (token_list->count - 1))
         {
             printf("\n");
         }
@@ -36,9 +37,9 @@ int echo(char tokens[][50], int no_of_tokens)
     return 0;
 }
 
-int type(char tokens[][50], int no_of_tokens)
+int type(TokenList *token_list)
 {
-    Command *cmd_info = get_command_info(tokens[1]); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
+    Command *cmd_info = get_command_info(token_list->tokens[1].raw); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
     if (cmd_info != NULL)
     {
         if (cmd_info->type == BUILT_IN)
@@ -51,54 +52,57 @@ int type(char tokens[][50], int no_of_tokens)
         }
         return 0;
     }
-    char *file = find_file(tokens[1]);
+    char *file = find_file(token_list->tokens[1].raw);
     if (file != NULL)
     {
         printf("%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s: not found\n", tokens[1]);
+    printf("%s: not found\n", token_list->tokens[1].raw);
     return 1;
 }
 
-int which(char tokens[][50], int no_of_tokens)
+int which(TokenList *token_list)
 {
-    char *file = find_file(tokens[1]);
+    char *file = find_file(token_list->tokens[1].raw);
     if (file != NULL)
     {
         printf("%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s not found\n", file);
+    printf("%s not found\n", token_list->tokens[1].raw);
     return 1;
 }
 
-int clear(char tokens[][50], int no_of_tokens)
+int clear(TokenList *token_list)
 {
     system(CLEAR_COMMAND);
+    return 0;
 }
 
-int pwd(char tokens[][50], int no_of_tokens)
+int pwd(TokenList *token_list)
 {
     printf("\nPath\n");
     printf("----\n");
     printf("%s\n\n\n", Variables.get("PWD"));
+    return 0;
 }
 
-int cd(char tokens[][50], int no_of_tokens)
+int cd(TokenList *token_list)
 {
     // No argument - do nothing
-    if (no_of_tokens < 2)
+    if (token_list->count < 2)
     {
         return 0;
     }
 
     char target_path[1024];
+    char *arg = token_list->tokens[1].raw;
 
     // Handle ~ paths
-    if (tokens[1][0] == '~')
+    if (arg[0] == '~')
     {
         char *home = Variables.get("HOME");
         if (home == NULL)
@@ -107,26 +111,26 @@ int cd(char tokens[][50], int no_of_tokens)
             return 1;
         }
 
-        if (tokens[1][1] == '\0')
+        if (arg[1] == '\0')
         {
             // Just "~"
             strcpy(target_path, home);
         }
-        else if (tokens[1][1] == '/')
+        else if (arg[1] == '/')
         {
             // "~/path"
-            snprintf(target_path, sizeof(target_path), "%s%s", home, tokens[1] + 1);
+            snprintf(target_path, sizeof(target_path), "%s%s", home, arg + 1);
         }
         else
         {
             // Invalid like "~abc"
-            strcpy(target_path, tokens[1]);
+            strcpy(target_path, arg);
         }
     }
     else
     {
         // Use the path as-is (absolute or relative)
-        strcpy(target_path, tokens[1]);
+        strcpy(target_path, arg);
     }
 
     // Try to change directory
@@ -137,7 +141,7 @@ int cd(char tokens[][50], int no_of_tokens)
         return 0;
     }
 
-    printf("cd: %s: No such file or directory\n", tokens[1]);
+    printf("cd: %s: No such file or directory\n", arg);
     return 1;
 }
 
@@ -171,23 +175,22 @@ int variable_handler(char var_name[])
         printf("%s\n", value);
         return 0;
     }
-    printf("%s: Variable not found\n", var);
 
+    printf("%s: Variable not found\n", var);
     return 1;
 }
 
-int execute(char *filepath, char tokens[][50], int no_of_tokens)
+int execute(char *filepath, TokenList *token_list)
 {
-    if (no_of_tokens > 1)
+    if (token_list->count > 1)
     {
         char exec_string[1024];
         strcpy(exec_string, filepath);
-        for (size_t i = 1; i < (no_of_tokens); i++)
+        for (int i = 1; i < token_list->count; i++)
         {
             strcat(exec_string, " ");
-            strcat(exec_string, tokens[i]);
+            strcat(exec_string, token_list->tokens[i].raw);
         }
-
         system(exec_string);
         return 0;
     }

@@ -1,22 +1,24 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-int dummy(char tokens[][50], int no_of_tokens);
+#include "lexer.h"
 
-int echo(char tokens[][50], int no_of_tokens);
+int dummy(TokenList *token_list);
 
-int type(char tokens[][50], int no_of_tokens);
+int echo(TokenList *token_list);
 
-int which(char tokens[][50], int no_of_tokens);
+int type(TokenList *token_list);
 
-int clear(char tokens[][50], int no_of_tokens);
+int which(TokenList *token_list);
 
-int pwd(char tokens[][50], int no_of_tokens);
+int clear(TokenList *token_list);
 
-int cd(char tokens[][50], int no_of_tokens);
+int pwd(TokenList *token_list);
+
+int cd(TokenList *token_list);
 
 int variable_handler(char var_name[]);
 
-int execute(char *filepath, char tokens[][50], int no_of_tokens);
+int execute(char *filepath, TokenList *token_list);
 
 #endif

@@ -30,9 +30,9 @@
  */
 void lex(char *data, TokenList *token_list)
 {
-    int i = 0;
-    int j = 0;
-    int k = 0;
+    int i = 0; // index of data
+    int j = 0; // index of token
+    int k = 0; // index of char inside token
 
     bool is_literal = false;
     bool is_quoted = false;
@@ -49,6 +49,7 @@ void lex(char *data, TokenList *token_list)
                 token_list->tokens[j].type = TOKEN_WORD;
                 token_list->tokens[j].is_literal = is_literal;
                 token_list->tokens[j].is_quoted = is_quoted;
+                token_list->tokens[j].position = j;
                 j++;
                 k = 0;
             }
@@ -71,6 +72,7 @@ void lex(char *data, TokenList *token_list)
                 if (k > 0)
                 {
                     token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].position = j;
                     j++;
                     k = 0;
                     is_literal = false;
@@ -98,6 +100,7 @@ void lex(char *data, TokenList *token_list)
                     if (k > 0)
                     {
                         token_list->tokens[j].raw[k] = '\0';
+                        token_list->tokens[j].position = j;
                         j++;
                         k = 0;
                         is_quoted = false;
@@ -114,11 +117,13 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_AND;
                 strcpy(token_list->tokens[j].raw, "&&");
+                token_list->tokens[j].position = j;
                 j++;
                 i += 2;
                 continue;
@@ -131,11 +136,13 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_OR;
                 strcpy(token_list->tokens[j].raw, "||");
+                token_list->tokens[j].position = j;
                 j++;
                 i += 2;
                 continue;
@@ -148,11 +155,13 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_REDIRECT_APPEND;
                 strcpy(token_list->tokens[j].raw, ">>");
+                token_list->tokens[j].position = j;
                 j++;
                 i += 2;
                 continue;
@@ -165,11 +174,14 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_PIPE;
                 strcpy(token_list->tokens[j].raw, "|");
+                token_list->tokens[j].position = j;
                 j++;
                 i++;
                 continue;
@@ -182,11 +194,15 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_REDIRECT_OUT;
                 strcpy(token_list->tokens[j].raw, ">");
+                token_list->tokens[j].position = j;
+                token_list->tokens[j].position = j;
                 j++;
                 i++;
                 continue;
@@ -199,11 +215,13 @@ void lex(char *data, TokenList *token_list)
                 {
                     token_list->tokens[j].raw[k] = '\0';
                     token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
                     j++;
                     k = 0;
                 }
                 token_list->tokens[j].type = TOKEN_REDIRECT_IN;
                 strcpy(token_list->tokens[j].raw, "<");
+                token_list->tokens[j].position = j;
                 j++;
                 i++;
                 continue;
@@ -242,6 +260,7 @@ void lex(char *data, TokenList *token_list)
         token_list->tokens[j].type = TOKEN_WORD;
         token_list->tokens[j].is_literal = is_literal;
         token_list->tokens[j].is_quoted = is_quoted;
+        token_list->tokens[j].position = j;
         j++;
     }
 

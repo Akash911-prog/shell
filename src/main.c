@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "command_info.h"
+#include "builtins.h"
 #include "commands.h"
 #include "utils.h"
 #include "variables.h"
@@ -19,82 +19,86 @@ int main()
     Variables.init(32);
     setbuf(stdout, NULL);
     init_prompt();
+
     while (1)
     {
-        // command token is tokens[0]. keeps this in mind. this word will be used a lot
-        // command and prompt initialization
         char cmd[1024];
         cmd[0] = '\0';
         printf("%s", Variables.get("PS1"));
 
-        if (fgets(cmd, sizeof(cmd), stdin) != NULL) // takes input from stdin
+        if (fgets(cmd, sizeof(cmd), stdin) == NULL)
+            continue;
+
+        printf("\033[0m");
+        cmd[strcspn(cmd, "\n")] = '\0';
+
+        if (strcmp(cmd, "exit") == 0)
+            exit(0);
+
+        TokenList token_list = {0};
+        lex(cmd, &token_list);
+
+        if (token_list.count == 0)
+            continue;
+
+        Token *cmd_token = &token_list.tokens[0];
+
+        /* Debug: dump tokens */
+        if (strcmp(cmd_token->raw, "lex") == 0)
         {
-            printf("\033[0m");
-            cmd[strcspn(cmd, "\n")] = '\0'; // removes \n from the the cmd string
+            for (int i = 0; i < token_list.count; i++)
+                printf("[%d] raw='%s' value='%s' type=%d\n",
+                       i,
+                       token_list.tokens[i].raw,
+                       token_list.tokens[i].value,
+                       token_list.tokens[i].type);
+            continue;
+        }
 
-            int no_of_tokens = 0;
-            char tokens[50][50]; // tokens array contains all splited tokens
+        /* Variable query: $VAR */
+        if (cmd_token->raw[0] == VAR_IDENTIFIER)
+        {
+            variable_handler(cmd_token->raw);
+            continue;
+        }
 
-            TokenList token_list = {0};
-
-            tokenize_cmd(cmd, tokens, &no_of_tokens);
-            int command_found = 0;
-
-            int i = 0;
-
-            if (strcmp(tokens[0], "exit") == 0)
+        /* Built-in commands */
+        int command_found = 0;
+        for (int i = 0; commands[i] != NULL; i++)
+        {
+            if (strcmp(cmd_token->raw, commands[i]->name) == 0)
             {
-                exit(0);
-            }
-            if (tokens[0][0] == VAR_IDENTIFIER) // if its a variable
-            {
-                variable_handler(tokens[0]);
-                continue;
-            }
-
-            if (strcmp(tokens[0], "lex") == 0)
-            {
-                lex(cmd, &token_list);
-                for (size_t i = 0; i < token_list.count; i++)
-                {
-                    printf("%s\n", token_list.tokens[i].raw);
-                }
-                continue;
-            }
-
-            // loops through all commands metadata and compares there name with the inputed command.
-            while (commands[i] != NULL)
-            {
-                if (strcmp(tokens[0], commands[i]->name) == 0)
-                {
-                    command_found = 1;
-                    commands[i]->handler(tokens, no_of_tokens); // calls the handler function associated with the command. see commands_info.h for detailed description
-                    break;
-                }
-                i++;
-            }
-            if (command_found == 0)
-            {
-                char *filepath = find_file(tokens[0]); // return a file path string in malloc memory. so free it.
-                if (filepath != NULL)
-                {
-                    execute(filepath, tokens, no_of_tokens);
-                    free(filepath);
-                    continue;
-                }
-
-                if ((tokens[0][0] == '.') && (tokens[0][1] == '/' || tokens[0][1] == '\\')) // checks if the command in current directory executable
-                {
-                    char buffer[1024];
-                    snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("CWD"), PATH_SEP, (tokens[0] + 2));
-                    system(buffer);
-                    continue;
-                }
-
-                // if nothing found. neither a command nor a executable.
-                printf("%s: not found\n", tokens[0]);
+                command_found = 1;
+                commands[i]->handler(&token_list);
+                break;
             }
         }
+
+        if (command_found)
+            continue;
+
+        /* External executable on PATH */
+        char *filepath = find_file(cmd_token->raw);
+        if (filepath != NULL)
+        {
+            execute(filepath, &token_list);
+            free(filepath);
+            continue;
+        }
+
+        /* Relative path: ./foo */
+        if (cmd_token->raw[0] == '.' &&
+            (cmd_token->raw[1] == '/' || cmd_token->raw[1] == '\\'))
+        {
+            char buffer[1024];
+            snprintf(buffer, sizeof(buffer), "%s%s%s",
+                     Variables.get("CWD"), PATH_SEP, (cmd_token->raw + 2));
+            system(buffer);
+            continue;
+        }
+
+        printf("%s: not found\n", cmd_token->raw);
     }
+
     return 0;
 }
