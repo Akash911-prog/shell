@@ -21,11 +21,11 @@ src/
 
 > Goal: Set up new files without breaking anything existing
 
-- [ ] **1.1** Create `ast.h` with `NodeType` enum and `ASTNode` struct skeleton
-- [ ] **1.2** Create `ast.c` with stub `ast_node_create()` and `ast_free()`
-- [ ] **1.3** Rename `tokens.c / tokens.h` → `lexer.c / lexer.h`
-- [ ] **1.4** Update all `#include "tokens.h"` references to `#include "lexer.h"`
-- [ ] **1.5** Create empty stub files: `parser.c/h`, `expander.c/h`, `executor.c/h`, `builtins.c/h`
+- [x] **1.1** Create `ast.h` with `NodeType` enum and `ASTNode` struct skeleton
+- [x] **1.2** Create `ast.c` with stub `ast_node_create()` and `ast_free()`
+- [x] **1.3** Rename `tokens.c / tokens.h` → `lexer.c / lexer.h`
+- [x] **1.4** Update all `#include "tokens.h"` references to `#include "lexer.h"`
+- [x] **1.5** Create empty stub files: `parser.c/h`, `expander.c/h`, `executor.c/h`, `builtins.c/h`
 
 **✅ Checkpoint:** Project compiles. Shell works exactly as before.
 
