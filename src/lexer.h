@@ -13,7 +13,7 @@ typedef enum
     TOKEN_BACKGROUND,
     TOKEN_AND,
     TOKEN_OR,
-    TOKEN_SEMICOLON,
+    TOKEN_BINARY_EXPRESSION
 } TokenType;
 
 typedef struct

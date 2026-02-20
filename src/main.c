@@ -91,8 +91,8 @@ int main()
             (cmd_token->raw[1] == '/' || cmd_token->raw[1] == '\\'))
         {
             char buffer[1024];
-            snprintf(buffer, sizeof(buffer), "%s%s%s",
-                     Variables.get("CWD"), PATH_SEP, (cmd_token->raw + 2));
+            snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("PWD"), PATH_SEP, (cmd_token->raw + 2)); // makes a path to the executable
+            printf("%s", buffer);
             system(buffer);
             continue;
         }

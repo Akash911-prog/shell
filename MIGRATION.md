@@ -36,8 +36,8 @@ src/
 > Goal: Replace old tokenizer with a proper state machine lexer
 
 - [x] **2.1** Add `position` field to `Token` struct (for error messages later)
-- [ ] **2.2** Change fixed `tokens[50][50]` → dynamic `TokenList` with `create/push/free`
-- [ ] **2.3** Implement state machine in `lex()`:
+- [x] **2.2** Change fixed `tokens[50][50]` → dynamic `TokenList` with `create/push/free`
+- [x] **2.3** Implement state machine in `lex()`:
   - [x] Whitespace skipping
   - [x] Single-char operators: `|` `>` `<` `&` `;`
   - [x] Multi-char operators: `||` `&&` `>>` `<<` (check these FIRST)
@@ -46,7 +46,7 @@ src/
   - [x] Escape characters `\` → strip backslash, keep next char
   - [x] Regular words → set `needs_expansion` if contains `$` `*` `~`
   - [x] EOF token at end
-- [ ] **2.4** Replace old `tokenize()` call in `main.c` with `lex()`
+- [x] **2.4** Replace old `tokenize()` call in `main.c` with `lex()`
 
 **✅ Checkpoint:** Manually test these inputs print correct token lists:
 

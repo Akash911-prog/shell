@@ -1,0 +1,61 @@
+{
+    "variable_store": {
+        "description": "Internal shell variable store. Separate from the OS environment — variables are not exported to child processes unless explicitly passed.",
+        "implementation": "variables.c",
+        "hashing": "FNV-1a with chaining for collision resolution",
+        "api": {
+            "Variables.init(n)": "Initialise the store with capacity n. Call once at startup.",
+            "Variables.set(name, value)": "Insert or overwrite a variable.",
+            "Variables.get(name)": "Returns a raw pointer into the store. Do NOT free it.",
+            "Variables.delete(name)": "Remove a variable from the store.",
+            "Variables.destroy()": "Free all memory. Call on shell exit."
+        },
+        "variables": [
+            {
+                "name": "PS1",
+                "set_by": "init_prompt()",
+                "file": "utils.c",
+                "description": "The shell prompt string displayed to the user before each input. Contains ANSI color codes.",
+                "example": "\\033[32muser@\\033[35mhost \\033[36;1m/home/user\\n$\\033[33;22m ",
+                "user_writable": true,
+                "notes": "Rebuilt every time init_prompt() is called (e.g. after cd). Contains live USER, HOST, and PWD values embedded at build time."
+            },
+            {
+                "name": "PWD",
+                "set_by": "set_pwd()",
+                "file": "utils.c",
+                "description": "The current working directory of the shell process.",
+                "example": "C:\\Users\\john\\projects",
+                "user_writable": true,
+                "notes": "Updated on every cd and on shell startup via init_prompt(). Falls back to HOME if getcwd() fails."
+            },
+            {
+                "name": "USER",
+                "set_by": "set_username()",
+                "file": "utils.c",
+                "description": "The name of the currently logged-in user.",
+                "example": "john",
+                "user_writable": false,
+                "notes": "On Windows uses GetUserName(). On Linux/macOS reads from the password database via getpwuid()."
+            },
+            {
+                "name": "HOST",
+                "set_by": "set_hostname()",
+                "file": "utils.c",
+                "description": "The hostname of the machine the shell is running on.",
+                "example": "DESKTOP-ABC123",
+                "user_writable": false,
+                "notes": "On Windows uses GetComputerName(). On Linux/macOS uses gethostname()."
+            },
+            {
+                "name": "HOME",
+                "set_by": "set_home_directory()",
+                "file": "utils.c",
+                "description": "The home directory of the current user.",
+                "example": "/home/john",
+                "user_writable": false,
+                "notes": "On Windows reads USERPROFILE, falls back to HOMEDRIVE+HOMEPATH. On Linux/macOS reads HOME env var, falls back to the password database."
+            }
+        ]
+    }
+}
