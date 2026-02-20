@@ -382,5 +382,11 @@ void lex(char *data, TokenList *token_list)
         j++;
     }
 
-    token_list->count = j;
+    strcpy(token_list->tokens[j].raw, "^");
+    token_list->tokens[j].type = TOKEN_EOF;
+    token_list->tokens[j].position = j;
+
+    token_list->count = j + 1;
 }
+
+TokenList tokens = {0};

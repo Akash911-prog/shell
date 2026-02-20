@@ -3,38 +3,43 @@
 #include <string.h>
 #include "ast.h"
 
-void add_arg(struct Node *self, char *args)
+static void _add_arg(struct Node *self, char *args)
 {
     self->args = realloc(self->args, sizeof(char *) * (self->arg_count + 1));
     self->args[self->arg_count] = strdup(args);
     self->arg_count++;
 }
-void add_redirect(struct Node *self, Redirect redirect)
+static void _add_redirect(struct Node *self, Redirect redirect)
 {
     self->redirects = realloc(self->redirects, sizeof(Redirect) * (self->redirect_count + 1));
     self->redirects[self->redirect_count] = redirect;
     self->redirect_count++;
 }
 
-Node *new_node(NodeType type)
+Node *new_node(NodeType type, Node *left, Node *right)
 {
     Node *node = malloc(sizeof(Node));
+    if (!node)
+    {
+        perror("malloc failed");
+        exit(1);
+    }
     node->type = type;
     node->args = NULL;
     node->arg_count = 0;
     node->redirects = NULL;
     node->redirect_count = 0;
-    node->left = NULL;
-    node->right = NULL;
+    node->left = left;
+    node->right = right;
     node->body = NULL;
     node->background = false;
-    node->add_arg = add_arg;
-    node->add_redirect = add_redirect;
+    node->add_arg = _add_arg;
+    node->add_redirect = _add_redirect;
 
     return node;
 }
 
-void destroy_tree(Node *node)
+void destroy_node(Node *node)
 {
     if (!node)
         return;

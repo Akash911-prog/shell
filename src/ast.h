@@ -2,7 +2,6 @@
 #define AST_H
 
 #include "lexer.h"
-#include <stdbool.h>
 
 typedef enum
 {
@@ -46,6 +45,7 @@ typedef struct Node
 
 } Node;
 
-Node *new_node(NodeType type);
+Node *new_node(NodeType type, Node *left, Node *right);
+void destroy_node(Node *node);
 
 #endif

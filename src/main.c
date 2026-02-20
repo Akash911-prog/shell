@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "variables.h"
 #include "lexer.h"
-#include "lexer.h"
+#include "tokenization_pipeline.h"
 
 #define VAR_IDENTIFIER '$'
 #ifdef _WIN32
@@ -53,6 +53,12 @@ int main()
                        token_list.tokens[i].raw,
                        token_list.tokens[i].value,
                        token_list.tokens[i].type);
+            continue;
+        }
+
+        if (strcmp(cmd_token->raw, "parse") == 0)
+        {
+            parsecute(cmd + 6);
             continue;
         }
 

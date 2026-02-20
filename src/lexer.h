@@ -29,6 +29,7 @@ typedef enum
     TOKEN_RPAREN,              // Add
     TOKEN_AND,
     TOKEN_OR,
+    TOKEN_EOF
 } TokenType;
 
 typedef struct
@@ -49,5 +50,7 @@ typedef struct
 } TokenList;
 
 void lex(char *data, TokenList *token_list);
+
+extern TokenList tokens;
 
 #endif
