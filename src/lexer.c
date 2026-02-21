@@ -25,6 +25,7 @@
  *  ;               Emit current word token + emit SEMICOLON token. (continue)
  *  (               Emit current word token + emit LPAREN token. (continue)
  *  )               Emit current word token + emit RPAREN token. (continue)
+ *  =               If current token looks like NAME (alnum/_), mark as TOKEN_ASSIGN, fall through.
  *  \               Advance i to skip backslash, fall through to add next char.
  *  $               Set needs_expansion = true on current token, fall through.
  *  ~               Set needs_expansion = true on current token, fall through.
@@ -34,6 +35,20 @@
  * @param data          The raw input string to tokenize.
  * @param token_list    Pointer to TokenList to populate.
  */
+
+// Returns true if the string so far is a valid variable name (alnum + underscore)
+static bool is_valid_var_name(const char *str, int len)
+{
+    if (len == 0)
+        return false;
+    for (int n = 0; n < len; n++)
+    {
+        if (!isalnum((unsigned char)str[n]) && str[n] != '_')
+            return false;
+    }
+    return true;
+}
+
 void lex(char *data, TokenList *token_list)
 {
     int i = 0; // index of data
@@ -51,7 +66,8 @@ void lex(char *data, TokenList *token_list)
             if (k > 0)
             {
                 token_list->tokens[j].raw[k] = '\0';
-                token_list->tokens[j].type = TOKEN_WORD;
+                if (token_list->tokens[j].type != TOKEN_ASSIGN)
+                    token_list->tokens[j].type = TOKEN_WORD;
                 token_list->tokens[j].is_literal = is_literal;
                 token_list->tokens[j].is_quoted = is_quoted;
                 token_list->tokens[j].position = j;
@@ -77,7 +93,8 @@ void lex(char *data, TokenList *token_list)
                 if (k > 0)
                 {
                     token_list->tokens[j].raw[k] = '\0';
-                    token_list->tokens[j].type = TOKEN_WORD;
+                    if (token_list->tokens[j].type != TOKEN_ASSIGN)
+                        token_list->tokens[j].type = TOKEN_WORD;
                     token_list->tokens[j].position = j;
                     j++;
                     k = 0;
@@ -106,7 +123,8 @@ void lex(char *data, TokenList *token_list)
                     if (k > 0)
                     {
                         token_list->tokens[j].raw[k] = '\0';
-                        token_list->tokens[j].type = TOKEN_WORD;
+                        if (token_list->tokens[j].type != TOKEN_ASSIGN)
+                            token_list->tokens[j].type = TOKEN_WORD;
                         token_list->tokens[j].position = j;
                         j++;
                         k = 0;
@@ -345,10 +363,20 @@ void lex(char *data, TokenList *token_list)
                 continue;
             }
 
+            // ASSIGNMENT =
+            // Only treat as assignment if what we've built so far is a valid
+            // variable name (e.g. HOME, MY_VAR, _foo) and we are not inside
+            // quotes. The = and everything after becomes part of the same token.
+            else if (data[i] == '=' && !is_quoted && is_valid_var_name(token_list->tokens[j].raw, k))
+            {
+                token_list->tokens[j].type = TOKEN_ASSIGN;
+                // fall through to add = to raw, the value chars will follow
+            }
+
             // Escape sequence - skip backslash, fall through to add next char
             else if (data[i] == '\\' && data[i + 1] != '\0')
             {
-                i++; // skip the backslash, add next char at bottom
+                i++;
             }
 
             // Variable/expansion
@@ -366,7 +394,7 @@ void lex(char *data, TokenList *token_list)
             }
         }
 
-        // BOTTOM: all word chars land here (regular, $, ~, escaped, literal)
+        // BOTTOM: all word chars land here (regular, $, ~, escaped, literal, =)
         token_list->tokens[j].raw[k++] = data[i];
         i++;
     }
@@ -375,7 +403,9 @@ void lex(char *data, TokenList *token_list)
     if (k > 0)
     {
         token_list->tokens[j].raw[k] = '\0';
-        token_list->tokens[j].type = TOKEN_WORD;
+        // preserve TOKEN_ASSIGN if it was set mid-token
+        if (token_list->tokens[j].type != TOKEN_ASSIGN)
+            token_list->tokens[j].type = TOKEN_WORD;
         token_list->tokens[j].is_literal = is_literal;
         token_list->tokens[j].is_quoted = is_quoted;
         token_list->tokens[j].position = j;

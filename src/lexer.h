@@ -29,6 +29,7 @@ typedef enum
     TOKEN_RPAREN,              // Add
     TOKEN_AND,
     TOKEN_OR,
+    TOKEN_ASSIGN,
     TOKEN_EOF
 } TokenType;
 

@@ -3,10 +3,10 @@
 #include <string.h>
 #include "ast.h"
 
-static void _add_arg(struct Node *self, char *args)
+static void _add_arg(struct Node *self, Token *args)
 {
-    self->args = realloc(self->args, sizeof(char *) * (self->arg_count + 1));
-    self->args[self->arg_count] = strdup(args);
+    self->args = realloc(self->args, sizeof(Token) * (self->arg_count + 1));
+    self->args[self->arg_count] = *args;
     self->arg_count++;
 }
 static void _add_redirect(struct Node *self, Redirect redirect)
@@ -45,10 +45,6 @@ void destroy_node(Node *node)
         return;
 
     // Free args
-    for (int i = 0; i < node->arg_count; i++)
-    {
-        free(node->args[i]); // free each string
-    }
     free(node->args); // free the array
 
     // Free redirects

@@ -11,6 +11,7 @@ typedef enum
     SUB_COMMANDS,
     AND,
     OR,
+    ASSIGNMENT
 } NodeType;
 
 typedef struct
@@ -25,7 +26,7 @@ typedef struct Node
     NodeType type; // node type
 
     // For NODE_COMMAND (leaf nodes)
-    char **args;         // Array of argument strings
+    Token *args;         // Array of argument strings
     int arg_count;       // Number of arguments
     Redirect *redirects; // Array of redirects
     int redirect_count;  // Number of redirects
@@ -40,7 +41,7 @@ typedef struct Node
     // Metadata
     bool background; // Run in background?
 
-    void (*add_arg)(struct Node *self, char *args);
+    void (*add_arg)(struct Node *self, Token *args);
     void (*add_redirect)(struct Node *self, Redirect redirect);
 
 } Node;

@@ -33,11 +33,10 @@ bool consume(TokenType type)
         current_token = get_next_token();
         return true;
     }
-    printf("Parsing Error on token %d", current_token->position);
+    printf("Parsing Error on token %d\n", current_token->position);
     return false;
 }
 
-// Fix #2: use the parameter instead of always reading current_token->type
 bool is_redirect(TokenType type)
 {
     if (type == TOKEN_REDIRECT_APPEND ||
@@ -70,8 +69,6 @@ void attach_redirect(Node *cmd)
     Redirect new_redirect = {.filename = NULL, .type = current_token->type, .fd = fd};
     current_token = get_next_token();
 
-    // Fix #3: was a while loop, causing it to consume multiple words and
-    // overwrite the filename each time. A redirect takes exactly one filename.
     if (match(TOKEN_WORD))
     {
         new_redirect.filename = strdup(current_token->raw);
@@ -147,7 +144,7 @@ Node *parse_sub_command()
     if (match(TOKEN_LPAREN))
     {
         consume(TOKEN_LPAREN);
-        Node *body = parse_command_line();
+        Node *body = parse_logical_expressions();
         consume(TOKEN_RPAREN);
         Node *node = new_node(SUB_COMMANDS, NULL, NULL);
         node->body = body;
@@ -156,9 +153,19 @@ Node *parse_sub_command()
     else
     {
         Node *node = new_node(CMD, NULL, NULL);
+        if (match(TOKEN_ASSIGN))
+        {
+            Node *node = new_node(ASSIGNMENT, NULL, NULL);
+            while (match(TOKEN_ASSIGN))
+            {
+                node->add_arg(node, current_token->raw);
+                consume(TOKEN_ASSIGN);
+            }
+            return node;
+        }
         while (match(TOKEN_WORD))
         {
-            node->add_arg(node, current_token->raw);
+            node->add_arg(node, current_token);
             consume(TOKEN_WORD);
         }
         return node;
