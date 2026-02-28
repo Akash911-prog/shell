@@ -26,10 +26,10 @@ int dummy(TokenList *token_list)
 
 int echo(TokenList *token_list)
 {
-    for (int i = 1; i < token_list->count; i++)
+    for (int i = 1; i < (token_list->count - 1); i++)
     {
         printf("%s ", token_list->tokens[i].raw);
-        if (i == (token_list->count - 1))
+        if (i == (token_list->count - 2))
         {
             printf("\n");
         }

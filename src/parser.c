@@ -152,22 +152,22 @@ Node *parse_sub_command()
     }
     else
     {
-        Node *node = new_node(CMD, NULL, NULL);
         if (match(TOKEN_ASSIGN))
         {
             Node *node = new_node(ASSIGNMENT, NULL, NULL);
             while (match(TOKEN_ASSIGN))
             {
-                node->add_arg(node, current_token->raw);
+                node->add_arg(node, current_token);
                 consume(TOKEN_ASSIGN);
             }
             return node;
         }
         while (match(TOKEN_WORD))
         {
+            Node *node = new_node(CMD, NULL, NULL);
             node->add_arg(node, current_token);
             consume(TOKEN_WORD);
+            return node;
         }
-        return node;
     }
 }

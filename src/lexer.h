@@ -33,7 +33,7 @@ typedef enum
     TOKEN_EOF
 } TokenType;
 
-typedef struct
+typedef struct Token
 {
     char raw[256];   // Original text: "$USER/documents"
     char value[256]; // Expanded text: "/home/john/documents"
@@ -51,6 +51,8 @@ typedef struct
 } TokenList;
 
 void lex(char *data, TokenList *token_list);
+
+char *get_Token_value(Token *self);
 
 extern TokenList tokens;
 

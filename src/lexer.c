@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "lexer.h"
 
 /**
@@ -75,6 +76,23 @@ void lex(char *data, TokenList *token_list)
                 k = 0;
             }
             i++;
+            continue;
+        }
+
+        if (data[i] == ')' && data[i + 1] == ')' && is_literal)
+        {
+            is_literal = false;
+            if (k > 0)
+            {
+                token_list->tokens[j].raw[k++] = ')';
+                token_list->tokens[j].raw[k++] = ')';
+                token_list->tokens[j].raw[k] = '\0';
+                token_list->tokens[j].type = TOKEN_WORD;
+                token_list->tokens[j].position = j;
+                j++;
+                k = 0;
+            }
+            i += 2;
             continue;
         }
 
@@ -169,6 +187,16 @@ void lex(char *data, TokenList *token_list)
                 strcpy(token_list->tokens[j].raw, "||");
                 token_list->tokens[j].position = j;
                 j++;
+                i += 2;
+                continue;
+            }
+
+            // ((
+            else if (data[i] == '(' && data[i + 1] == '(')
+            {
+                is_literal = true;
+                token_list->tokens[j].raw[k++] = '(';
+                token_list->tokens[j].raw[k++] = '(';
                 i += 2;
                 continue;
             }
@@ -417,6 +445,15 @@ void lex(char *data, TokenList *token_list)
     token_list->tokens[j].position = j;
 
     token_list->count = j + 1;
+}
+
+char *get_Token_value(Token *self)
+{
+    if (self->needs_expansion == true)
+    {
+        return self->value;
+    }
+    return self->raw;
 }
 
 TokenList tokens = {0};

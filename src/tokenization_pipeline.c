@@ -1,8 +1,48 @@
 #include "tokenization_pipeline.h"
+#include "expander.h"
 
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+static const char *token_type_str(TokenType type)
+{
+    switch (type)
+    {
+    case TOKEN_WORD:
+        return "WORD";
+    case TOKEN_ASSIGN:
+        return "ASSIGN";
+    case TOKEN_PIPE:
+        return "PIPE";
+    case TOKEN_AND:
+        return "AND";
+    case TOKEN_OR:
+        return "OR";
+    case TOKEN_REDIRECT_IN:
+        return "REDIRECT_IN";
+    case TOKEN_REDIRECT_OUT:
+        return "REDIRECT_OUT";
+    case TOKEN_REDIRECT_APPEND:
+        return "REDIRECT_APPEND";
+    case TOKEN_REDIRECT_ERR:
+        return "REDIRECT_ERR";
+    case TOKEN_REDIRECT_ERR_APPEND:
+        return "REDIRECT_ERR_APPEND";
+    case TOKEN_BACKGROUND:
+        return "BACKGROUND";
+    case TOKEN_SEMICOLON:
+        return "SEMICOLON";
+    case TOKEN_LPAREN:
+        return "LPAREN";
+    case TOKEN_RPAREN:
+        return "RPAREN";
+    case TOKEN_EOF:
+        return "EOF";
+    default:
+        return "UNKNOWN";
+    }
+}
 
 void print_ast(Node *node, int indent)
 {
@@ -34,6 +74,9 @@ void print_ast(Node *node, int indent)
     case OR:
         printf("OR\n");
         break;
+    case ASSIGNMENT:
+        printf("ASSIGNMENT\n");
+        break;
     default:
         printf("UNKNOWN\n");
         break;
@@ -46,7 +89,7 @@ void print_ast(Node *node, int indent)
         {
             for (int j = 0; j < indent + 1; j++)
                 printf("  ");
-            printf("ARG: %s\n", node->args[i]);
+            printf("ARG: %s (type: %s)\n", get_Token_value(&node->args[i]), token_type_str(node->args[i].type));
         }
     }
 
@@ -91,6 +134,7 @@ void parsecute(char *input)
     {
         return;
     }
+    expand(tree);
     print_ast(tree, 4);
     destroy_node(tree);
 }

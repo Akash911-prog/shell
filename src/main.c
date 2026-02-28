@@ -99,7 +99,6 @@ int main()
         {
             char buffer[1024];
             snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("PWD"), PATH_SEP, (cmd_token->raw + 2)); // makes a path to the executable
-            printf("%s", buffer);
             system(buffer);
             continue;
         }
