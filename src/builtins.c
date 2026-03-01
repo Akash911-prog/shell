@@ -40,3 +40,19 @@ Command *get_command_info(char *name)
     }
     return NULL;
 }
+
+bool find_and_run_builtin(Node *node)
+{
+    bool command_found = false;
+    for (int i = 0; commands[i] != NULL; i++)
+    {
+        if (strcmp(node->args[0].raw, commands[i]) == 0)
+        {
+            TokenList lt = {.tokens = node->args, .count = node->arg_count};
+            command_found = true;
+            commands[i]->handler(node->args);
+            break;
+        }
+    }
+    return command_found;
+}

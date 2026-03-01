@@ -2,6 +2,8 @@
 #define COMMAND_INFO_H
 
 #include "lexer.h"
+#include "ast.h"
+#include <stdbool.h>
 
 #define MAX_COMMANDS 30
 
@@ -24,5 +26,6 @@ extern Command command_metadata[];
 extern Command *commands[MAX_COMMANDS];
 
 Command *get_command_info(char *name);
+bool find_and_run_builtin(Node *node);
 
 #endif

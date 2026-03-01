@@ -19,6 +19,6 @@ int cd(TokenList *token_list);
 
 int variable_handler(char var_name[]);
 
-int execute(char *filepath, TokenList *token_list);
+int run(char *filepath, TokenList *token_list);
 
 #endif

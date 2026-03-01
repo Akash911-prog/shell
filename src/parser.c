@@ -162,12 +162,13 @@ Node *parse_sub_command()
             }
             return node;
         }
+
+        Node *node = new_node(CMD, NULL, NULL);
         while (match(TOKEN_WORD))
         {
-            Node *node = new_node(CMD, NULL, NULL);
             node->add_arg(node, current_token);
             consume(TOKEN_WORD);
-            return node;
         }
+        return node;
     }
 }

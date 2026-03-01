@@ -1,5 +1,6 @@
 #include "tokenization_pipeline.h"
 #include "expander.h"
+#include "executor.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -126,7 +127,7 @@ Node *parse()
     return parse_logical_expressions();
 }
 
-void parsecute(char *input)
+void exec_input(char *input)
 {
     tokenize(input);
     Node *tree = parse();
@@ -135,6 +136,6 @@ void parsecute(char *input)
         return;
     }
     expand(tree);
-    print_ast(tree, 4);
+    execute(tree);
     destroy_node(tree);
 }

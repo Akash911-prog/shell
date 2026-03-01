@@ -6,20 +6,6 @@
 #include "utils.h"
 #include "variables.h"
 
-#ifdef _WIN32
-#define PATH_SEP "\\"
-#include <direct.h>
-#include <windows.h>
-#include <Lmcons.h>
-#define GetCWD _getcwd
-#else
-#define PATH_SEP "/"
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#define GetCurrentDir getcwd
-#endif
-
 #define MAX_PATH_LEN 1024
 #define MAX_NO_OF_PATHS 30
 

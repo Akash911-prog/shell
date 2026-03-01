@@ -88,7 +88,7 @@ int main()
         char *filepath = find_file(cmd_token->raw);
         if (filepath != NULL)
         {
-            execute(filepath, &token_list);
+            run(filepath, &token_list);
             free(filepath);
             continue;
         }

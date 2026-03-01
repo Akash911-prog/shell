@@ -180,16 +180,16 @@ int variable_handler(char var_name[])
     return 1;
 }
 
-int execute(char *filepath, TokenList *token_list)
+int run(char *filepath, Node *node)
 {
-    if (token_list->count > 1)
+    if (node->arg_count > 1)
     {
         char exec_string[1024];
         strcpy(exec_string, filepath);
-        for (int i = 1; i < token_list->count; i++)
+        for (int i = 1; i < node->arg_count; i++)
         {
             strcat(exec_string, " ");
-            strcat(exec_string, token_list->tokens[i].raw);
+            strcat(exec_string, node->args[i].raw);
         }
         system(exec_string);
         return 0;

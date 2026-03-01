@@ -46,7 +46,7 @@ typedef struct Token
 
 typedef struct
 {
-    Token tokens[50];
+    Token tokens[256];
     int count;
 } TokenList;
 
