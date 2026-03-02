@@ -36,74 +36,7 @@ int main()
         if (strcmp(cmd, "exit") == 0)
             exit(0);
 
-        TokenList token_list = {0};
-        lex(cmd, &token_list);
-
-        if (token_list.count == 0)
-            continue;
-
-        Token *cmd_token = &token_list.tokens[0];
-
-        /* Debug: dump tokens */
-        if (strcmp(cmd_token->raw, "lex") == 0)
-        {
-            for (int i = 0; i < token_list.count; i++)
-                printf("[%d] raw='%s' value='%s' type=%d\n",
-                       i,
-                       token_list.tokens[i].raw,
-                       token_list.tokens[i].value,
-                       token_list.tokens[i].type);
-            continue;
-        }
-
-        if (strcmp(cmd_token->raw, "parse") == 0)
-        {
-            parsecute(cmd + 6);
-            continue;
-        }
-
-        /* Variable query: $VAR */
-        if (cmd_token->raw[0] == VAR_IDENTIFIER)
-        {
-            variable_handler(cmd_token->raw);
-            continue;
-        }
-
-        /* Built-in commands */
-        int command_found = 0;
-        for (int i = 0; commands[i] != NULL; i++)
-        {
-            if (strcmp(cmd_token->raw, commands[i]->name) == 0)
-            {
-                command_found = 1;
-                commands[i]->handler(&token_list);
-                break;
-            }
-        }
-
-        if (command_found)
-            continue;
-
-        /* External executable on PATH */
-        char *filepath = find_file(cmd_token->raw);
-        if (filepath != NULL)
-        {
-            run(filepath, &token_list);
-            free(filepath);
-            continue;
-        }
-
-        /* Relative path: ./foo */
-        if (cmd_token->raw[0] == '.' &&
-            (cmd_token->raw[1] == '/' || cmd_token->raw[1] == '\\'))
-        {
-            char buffer[1024];
-            snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("PWD"), PATH_SEP, (cmd_token->raw + 2)); // makes a path to the executable
-            system(buffer);
-            continue;
-        }
-
-        printf("%s: not found\n", cmd_token->raw);
+        exec_input(cmd);
     }
 
     return 0;

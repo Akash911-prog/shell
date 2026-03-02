@@ -17,7 +17,7 @@ typedef enum
 typedef struct
 {
     char *filename; // File to redirect to/from
-    TokenType type; // REDIRECT_IN, REDIRECT_OUT, REDIRECT_APPEND
+    Type type;      // REDIRECT_IN, REDIRECT_OUT, REDIRECT_APPEND
     int fd;         // Which fd: 0=stdin, 1=stdout, 2=stderr
 } Redirect;
 

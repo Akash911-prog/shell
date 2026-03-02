@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-static const char *token_type_str(TokenType type)
+static const char *token_type_str(Type type)
 {
     switch (type)
     {
@@ -116,26 +116,34 @@ void print_ast(Node *node, int indent)
     print_ast(node->body, indent + 1);
 }
 
-void tokenize(char *input)
+void tokenize(char *input, TokenList *tokens)
 {
-    lex(input, &tokens);
-    current_token = &tokens.tokens[0];
+    tokens->tokens = malloc(sizeof(Token) * 256);
+    tokens->count = 0;
+    lex(input, tokens);
 }
 
-Node *parse()
+void destroy_tokens(TokenList *tokens)
 {
-    return parse_logical_expressions();
+    if (tokens == NULL)
+        return;
+    free(tokens->tokens);
+    tokens->tokens = NULL;
+    tokens->count = 0;
 }
 
 void exec_input(char *input)
 {
-    tokenize(input);
-    Node *tree = parse();
+    TokenList tokens = {NULL, 0};
+    tokenize(input, &tokens);
+    Node *tree = parse(tokens);
+    destroy_tokens(&tokens);
     if (tree == NULL)
     {
         return;
     }
     expand(tree);
+    // print_ast(tree, 2);
     execute(tree);
     destroy_node(tree);
 }

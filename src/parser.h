@@ -8,7 +8,6 @@ Node *parse_command_line();
 Node *parse_pipeline();
 Node *parse_command();
 Node *parse_sub_command();
-
-extern Token *current_token;
+Node *parse(TokenList tokens_);
 
 #endif

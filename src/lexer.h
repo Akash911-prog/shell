@@ -31,13 +31,13 @@ typedef enum
     TOKEN_OR,
     TOKEN_ASSIGN,
     TOKEN_EOF
-} TokenType;
+} Type;
 
 typedef struct Token
 {
     char raw[256];   // Original text: "$USER/documents"
     char value[256]; // Expanded text: "/home/john/documents"
-    TokenType type;
+    Type type;
     bool is_quoted;       // Double quoted - expand vars but not globs
     bool is_literal;      // Single quoted - expand nothing
     bool needs_expansion; // Contains $VAR or * or ~
@@ -46,14 +46,12 @@ typedef struct Token
 
 typedef struct
 {
-    Token tokens[256];
+    Token *tokens;
     int count;
 } TokenList;
 
 void lex(char *data, TokenList *token_list);
 
 char *get_Token_value(Token *self);
-
-extern TokenList tokens;
 
 #endif

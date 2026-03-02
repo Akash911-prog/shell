@@ -2,6 +2,7 @@
 #define COMMANDS_H
 
 #include "lexer.h"
+#include "ast.h"
 
 int dummy(TokenList *token_list);
 
@@ -19,6 +20,6 @@ int cd(TokenList *token_list);
 
 int variable_handler(char var_name[]);
 
-int run(char *filepath, TokenList *token_list);
+int run(char *filepath, Node *node);
 
 #endif

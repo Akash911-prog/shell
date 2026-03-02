@@ -5,7 +5,8 @@
 #include "lexer.h"
 #include "parser.h"
 
-Token *current_token = NULL;
+static Token *current_token = NULL;
+static TokenList tokens;
 
 Token *get_next_token()
 {
@@ -17,7 +18,7 @@ Token *get_next_token()
     return &tokens.tokens[next];
 }
 
-bool match(TokenType type)
+bool match(Type type)
 {
     if (current_token->type == type)
     {
@@ -26,7 +27,7 @@ bool match(TokenType type)
     return false;
 }
 
-bool consume(TokenType type)
+bool consume(Type type)
 {
     if (current_token->type == type)
     {
@@ -37,7 +38,7 @@ bool consume(TokenType type)
     return false;
 }
 
-bool is_redirect(TokenType type)
+bool is_redirect(Type type)
 {
     if (type == TOKEN_REDIRECT_APPEND ||
         type == TOKEN_REDIRECT_ERR ||
@@ -83,7 +84,7 @@ Node *parse_logical_expressions()
     Node *left = parse_command_line();
     while (match(TOKEN_AND) || match(TOKEN_OR))
     {
-        TokenType op = current_token->type;
+        Type op = current_token->type;
         consume(current_token->type);
         Node *right = parse_command_line();
         if (op == TOKEN_AND)
@@ -171,4 +172,11 @@ Node *parse_sub_command()
         }
         return node;
     }
+}
+
+Node *parse(TokenList tokens_)
+{
+    tokens = tokens_;
+    current_token = &tokens.tokens[0];
+    return parse_logical_expressions();
 }

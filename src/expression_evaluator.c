@@ -17,12 +17,12 @@ typedef enum
     TOKEN_LPAREN, /* ( */
     TOKEN_RPAREN, /* ) */
     TOKEN_EOF     /* end of input */
-} TokenType;
+} Type;
 
 /* A token holds its type and, if it's a number, its numeric value */
 typedef struct
 {
-    TokenType type;
+    Type type;
     double value;
 } Token;
 
@@ -107,7 +107,7 @@ static bool consume(Token token)
 }
 
 /* Returns true if the current token is of the given type, without advancing */
-static bool match(TokenType type)
+static bool match(Type type)
 {
     return current_token.type == type;
 }
@@ -139,7 +139,7 @@ double eval_expression()
 
     while (match(TOKEN_PLUS) || match(TOKEN_MINUS))
     {
-        TokenType op = current_token.type;
+        Type op = current_token.type;
         consume(current_token); /* move past the operator */
         double right_value = eval_term();
 
@@ -165,7 +165,7 @@ double eval_term()
 
     while (match(TOKEN_STAR) || match(TOKEN_SLASH))
     {
-        TokenType op = current_token.type;
+        Type op = current_token.type;
         consume(current_token); /* move past the operator */
         double right_value = eval_factor();
 

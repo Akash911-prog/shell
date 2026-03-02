@@ -3,6 +3,7 @@
 #include <string.h>
 #include "builtins.h"
 #include "commands.h"
+#include "lexer.h"
 
 // all commands metadata
 Command command_metadata[] = {
@@ -46,11 +47,13 @@ bool find_and_run_builtin(Node *node)
     bool command_found = false;
     for (int i = 0; commands[i] != NULL; i++)
     {
-        if (strcmp(node->args[0].raw, commands[i]) == 0)
+        if (strcmp(node->args[0].raw, commands[i]->name) == 0)
         {
-            TokenList lt = {.tokens = node->args, .count = node->arg_count};
+            Token buf[256];
+            memcpy(buf, node->args, node->arg_count * sizeof(Token));
+            TokenList lt = {buf, node->arg_count};
             command_found = true;
-            commands[i]->handler(node->args);
+            commands[i]->handler(&lt);
             break;
         }
     }

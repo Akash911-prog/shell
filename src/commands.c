@@ -26,10 +26,10 @@ int dummy(TokenList *token_list)
 
 int echo(TokenList *token_list)
 {
-    for (int i = 1; i < (token_list->count - 1); i++)
+    for (int i = 1; i < (token_list->count); i++)
     {
-        printf("%s ", token_list->tokens[i].raw);
-        if (i == (token_list->count - 2))
+        printf("%s ", get_Token_value(&(token_list->tokens[i])));
+        if (i == (token_list->count - 1))
         {
             printf("\n");
         }
@@ -39,7 +39,7 @@ int echo(TokenList *token_list)
 
 int type(TokenList *token_list)
 {
-    Command *cmd_info = get_command_info(token_list->tokens[1].raw); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
+    Command *cmd_info = get_command_info(get_Token_value(&token_list->tokens[1])); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
     if (cmd_info != NULL)
     {
         if (cmd_info->type == BUILT_IN)
@@ -52,27 +52,27 @@ int type(TokenList *token_list)
         }
         return 0;
     }
-    char *file = find_file(token_list->tokens[1].raw);
+    char *file = find_file(get_Token_value(&token_list->tokens[1]));
     if (file != NULL)
     {
         printf("%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s: not found\n", token_list->tokens[1].raw);
+    printf("%s: not found\n", get_Token_value(&token_list->tokens[1]));
     return 1;
 }
 
 int which(TokenList *token_list)
 {
-    char *file = find_file(token_list->tokens[1].raw);
+    char *file = find_file(get_Token_value(&token_list->tokens[1]));
     if (file != NULL)
     {
         printf("%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s not found\n", token_list->tokens[1].raw);
+    printf("%s not found\n", get_Token_value(&token_list->tokens[1]));
     return 1;
 }
 
@@ -99,7 +99,7 @@ int cd(TokenList *token_list)
     }
 
     char target_path[1024];
-    char *arg = token_list->tokens[1].raw;
+    char *arg = get_Token_value(&token_list->tokens[1]);
 
     // Handle ~ paths
     if (arg[0] == '~')

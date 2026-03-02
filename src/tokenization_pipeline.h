@@ -4,6 +4,6 @@
 #include "lexer.h"
 #include "parser.h"
 
-void parsecute(char *input);
+void exec_input(char *input);
 
 #endif
