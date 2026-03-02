@@ -3,7 +3,12 @@
 
 #include "ast.h"
 #include "builtins.h"
+#include "iocontext.h"
+#include <stdio.h>
 
-void execute_win(Node *tree);
+// default
+IOContext default_io();
+
+void execute_win(Node *node, IOContext io);
 
 #endif

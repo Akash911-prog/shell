@@ -104,6 +104,12 @@ static void expand_variable(const Segment *seg, char *result, size_t *r)
     const char *val = Variables.get(var_name);
     if (val)
         append(result, r, val, strlen(val));
+    else
+    {
+        char buff[256];
+        snprintf(buff, sizeof(buff), "%s: variable not found", var_name);
+        append(result, r, buff, strlen(buff));
+    }
 }
 
 static void expand_expression(const Segment *seg, char *result, size_t *r)

@@ -42,20 +42,22 @@ Command *get_command_info(char *name)
     return NULL;
 }
 
-bool find_and_run_builtin(Node *node)
+bool find_and_run_builtin(Node *node, IOContext io)
 {
     bool command_found = false;
     for (int i = 0; commands[i] != NULL; i++)
     {
         if (strcmp(node->args[0].raw, commands[i]->name) == 0)
         {
-            Token buf[256];
-            memcpy(buf, node->args, node->arg_count * sizeof(Token));
-            TokenList lt = {buf, node->arg_count};
             command_found = true;
-            commands[i]->handler(&lt);
+            commands[i]->handler(node, io);
             break;
         }
+    }
+    if (!command_found && (node->args[0].raw[0]) == '$')
+    {
+        echo(node, io);
+        return true;
     }
     return command_found;
 }

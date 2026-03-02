@@ -3,20 +3,21 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "executor_win.h"
 
-int dummy(TokenList *token_list);
+int dummy(Node *node, IOContext io);
 
-int echo(TokenList *token_list);
+int echo(Node *node, IOContext io);
 
-int type(TokenList *token_list);
+int type(Node *node, IOContext io);
 
-int which(TokenList *token_list);
+int which(Node *node, IOContext io);
 
-int clear(TokenList *token_list);
+int clear(Node *node, IOContext io);
 
-int pwd(TokenList *token_list);
+int pwd(Node *node, IOContext io);
 
-int cd(TokenList *token_list);
+int cd(Node *node, IOContext io);
 
 int variable_handler(char var_name[]);
 

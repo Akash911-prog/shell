@@ -18,88 +18,100 @@
 #define Chdir chdir
 #endif
 
-int dummy(TokenList *token_list)
+int dummy(Node *node, IOContext io)
 // dummy placeholder function for the handler argument of exit command
 {
     return 0;
 }
 
-int echo(TokenList *token_list)
+// echos io.output to a FILE * io.out
+int echo(Node *node, IOContext io)
 {
-    for (int i = 1; i < (token_list->count); i++)
+    char buff[2048];
+    int offset = 0;
+
+    if (node->arg_count == 1)
     {
-        printf("%s ", get_Token_value(&(token_list->tokens[i])));
-        if (i == (token_list->count - 1))
+        if (node->args[0].raw[0] == '$')
         {
-            printf("\n");
+            snprintf(buff + offset, sizeof(buff) - offset, "%s\n", get_Token_value(&(node->args[0])));
         }
     }
+
+    for (int i = 1; i < (node->arg_count); i++)
+    {
+        offset += snprintf(buff + offset, sizeof(buff) - offset, "%s", get_Token_value(&(node->args[i])));
+        if (i == (node->arg_count - 1))
+        {
+            snprintf(buff + offset, sizeof(buff) - offset, "%s", "\n");
+        }
+    }
+
+    fprintf(io.out, "%s", buff);
     return 0;
 }
 
-int type(TokenList *token_list)
+int type(Node *node, IOContext io)
 {
-    Command *cmd_info = get_command_info(get_Token_value(&token_list->tokens[1])); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
+    Command *cmd_info = get_command_info(get_Token_value(&node->args[1])); // gets command info: {name, type, desc, help, argc}. return null if cmd not found
     if (cmd_info != NULL)
     {
         if (cmd_info->type == BUILT_IN)
         {
-            printf("BuiltIn\n");
+            fprintf(io.out, "BuiltIn\n");
         }
         else // Handle other types
         {
-            printf("%s is an external command\n", cmd_info->name);
+            fprintf(io.out, "%s is an external command\n", cmd_info->name);
         }
         return 0;
     }
-    char *file = find_file(get_Token_value(&token_list->tokens[1]));
+    char *file = find_file(get_Token_value(&node->args[1]));
     if (file != NULL)
     {
-        printf("%s\n", file);
+        fprintf(io.out, "%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s: not found\n", get_Token_value(&token_list->tokens[1]));
+    fprintf(io.out, "%s: not found\n", get_Token_value(&node->args[1]));
     return 1;
 }
 
-int which(TokenList *token_list)
+int which(Node *node, IOContext io)
 {
-    char *file = find_file(get_Token_value(&token_list->tokens[1]));
+    char *file = find_file(get_Token_value(&node->args[1]));
     if (file != NULL)
     {
-        printf("%s\n", file);
+        fprintf(io.out, "%s\n", file);
         free(file);
         return 0;
     }
-    printf("%s not found\n", get_Token_value(&token_list->tokens[1]));
+    fprintf(io.out, "%s not found\n", get_Token_value(&node->args[1]));
     return 1;
 }
 
-int clear(TokenList *token_list)
+int clear(Node *node, IOContext io)
 {
     system(CLEAR_COMMAND);
     return 0;
 }
 
-int pwd(TokenList *token_list)
+int pwd(Node *node, IOContext io)
 {
-    printf("\nPath\n");
-    printf("----\n");
-    printf("%s\n\n\n", Variables.get("PWD"));
+    fprintf(io.out, "\nPath\n----\n%s\n\n\n", Variables.get("PWD"));
     return 0;
 }
 
-int cd(TokenList *token_list)
+int cd(Node *node, IOContext io)
 {
     // No argument - do nothing
-    if (token_list->count < 2)
+    if (node->arg_count < 2)
     {
         return 0;
     }
 
     char target_path[1024];
-    char *arg = get_Token_value(&token_list->tokens[1]);
+    char *arg = get_Token_value(&node->args[1]);
 
     // Handle ~ paths
     if (arg[0] == '~')
@@ -107,7 +119,7 @@ int cd(TokenList *token_list)
         char *home = Variables.get("HOME");
         if (home == NULL)
         {
-            fprintf(stderr, "cd: HOME not set\n");
+            fprintf(io.out, "cd: HOME not set\n");
             return 1;
         }
 
@@ -141,7 +153,7 @@ int cd(TokenList *token_list)
         return 0;
     }
 
-    printf("cd: %s: No such file or directory\n", arg);
+    fprintf(io.out, "cd: %s: No such file or directory\n", arg);
     return 1;
 }
 

@@ -3,7 +3,8 @@
 void execute(Node *node)
 {
 #if _WIN32
-    execute_win(node);
+    IOContext io = default_io();
+    execute_win(node, io);
 #else
 
 #endif
