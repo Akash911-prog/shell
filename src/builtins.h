@@ -11,7 +11,8 @@
 
 typedef enum
 {
-    BUILT_IN
+    BUILT_IN,
+    EXTERNAL
 } Function_Type;
 
 typedef struct

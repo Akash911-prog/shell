@@ -61,3 +61,15 @@ bool find_and_run_builtin(Node *node, IOContext io)
     }
     return command_found;
 }
+
+bool is_builtin(char *cmd_name)
+{
+    for (int i = 0; commands[i] != NULL; i++)
+    {
+        if (strcmp(cmd_name, commands[i]->name) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}

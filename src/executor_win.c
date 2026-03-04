@@ -6,11 +6,67 @@
 #include "commands.h"
 #include "utils.h"
 #include "variables.h"
+#include "lexer.h"
 
 // default
 IOContext default_io()
 {
-    return (IOContext){stdin, stdout, stderr};
+    return (IOContext){stdin, stdout, stderr, false, false, false};
+}
+
+void apply_redirects(IOContext *io, Node *node)
+{
+    if (node->redirect_count <= 0)
+        return;
+
+    for (int i = 0; i < node->redirect_count; i++)
+    {
+        Redirect r = node->redirects[i];
+
+        switch (r.type)
+        {
+        case TOKEN_REDIRECT_IN: //
+            if (io->close_in)
+                fclose(io->in); // close previous if we opened it
+            io->in = fopen(r.filename, "r");
+            io->close_in = true;
+            break;
+
+        case TOKEN_REDIRECT_OUT: // >
+            if (io->close_out)
+                fclose(io->out);
+            io->out = fopen(r.filename, "w");
+            io->close_out = true;
+            break;
+
+        case TOKEN_REDIRECT_APPEND: // >>
+            if (io->close_out)
+                fclose(io->out);
+            io->out = fopen(r.filename, "a");
+            io->close_out = true;
+            break;
+
+        case TOKEN_REDIRECT_ERR: // 2>
+            if (io->close_err)
+                fclose(io->err);
+            io->err = fopen(r.filename, "w");
+            io->close_err = true;
+            break;
+
+        case TOKEN_REDIRECT_ERR_APPEND: // 2>>
+            if (io->close_err)
+                fclose(io->err);
+            io->err = fopen(r.filename, "a");
+            io->close_err = true;
+            break;
+        }
+
+        if (!io->in || !io->out || !io->err)
+        {
+            fprintf(stderr, "%s: no such file or directory\n", r.filename);
+            return;
+        }
+    }
 }
 
 void execute_win(Node *node, IOContext io)
@@ -46,6 +102,10 @@ void execute_win(Node *node, IOContext io)
 
     case CMD:
     {
+        if (node->redirect_count > 0)
+        {
+            apply_redirects(&io, node);
+        }
         bool command_found = find_and_run_builtin(node, io);
         if (command_found)
             return;

@@ -8,6 +8,9 @@ typedef struct
     FILE *in;
     FILE *out;
     FILE *err;
+    bool close_in;
+    bool close_out;
+    bool close_err;
 } IOContext;
 
 #endif

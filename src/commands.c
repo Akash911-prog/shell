@@ -48,6 +48,12 @@ int echo(Node *node, IOContext io)
     }
 
     fprintf(io.out, "%s", buff);
+    fflush(io.out);
+    if (io.out == stdout)
+    {
+        return 0;
+    }
+    fclose(io.out);
     return 0;
 }
 
@@ -71,9 +77,15 @@ int type(Node *node, IOContext io)
     {
         fprintf(io.out, "%s\n", file);
         free(file);
+        fflush(io.out);
+        if (io.out == stdout)
+        {
+            return 0;
+        }
+        fclose(io.out);
         return 0;
     }
-    fprintf(io.out, "%s: not found\n", get_Token_value(&node->args[1]));
+    fprintf(io.err, "%s: not found\n", get_Token_value(&node->args[1]));
     return 1;
 }
 
@@ -86,7 +98,7 @@ int which(Node *node, IOContext io)
         free(file);
         return 0;
     }
-    fprintf(io.out, "%s not found\n", get_Token_value(&node->args[1]));
+    fprintf(io.err, "%s not found\n", get_Token_value(&node->args[1]));
     return 1;
 }
 
@@ -119,7 +131,7 @@ int cd(Node *node, IOContext io)
         char *home = Variables.get("HOME");
         if (home == NULL)
         {
-            fprintf(io.out, "cd: HOME not set\n");
+            fprintf(io.err, "cd: HOME not set\n");
             return 1;
         }
 
@@ -153,8 +165,12 @@ int cd(Node *node, IOContext io)
         return 0;
     }
 
-    fprintf(io.out, "cd: %s: No such file or directory\n", arg);
+    fprintf(io.err, "cd: %s: No such file or directory\n", arg);
     return 1;
+}
+
+int cat(Node *node, IOContext io)
+{
 }
 
 int variable_handler(char var_name[])
