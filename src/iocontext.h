@@ -13,4 +13,10 @@ typedef struct
     bool close_err;
 } IOContext;
 
+typedef enum
+{
+    BUILT_IN,
+    EXTERNAL
+} Function_Type;
+
 #endif

@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include "lexer.h"
 #include "parser.h"
 
 static Token *current_token = NULL;
@@ -165,6 +160,20 @@ Node *parse_sub_command()
         }
 
         Node *node = new_node(CMD, NULL, NULL);
+        if (match(TOKEN_WORD))
+        {
+            if (is_builtin(current_token->raw))
+            {
+                node->cmd_type = BUILT_IN;
+                node->add_arg(node, current_token);
+            }
+            else
+            {
+                node->cmd_type = EXTERNAL;
+                node->add_arg(node, current_token);
+            }
+            consume(TOKEN_WORD);
+        }
         while (match(TOKEN_WORD))
         {
             node->add_arg(node, current_token);

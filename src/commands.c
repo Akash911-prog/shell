@@ -49,11 +49,6 @@ int echo(Node *node, IOContext io)
 
     fprintf(io.out, "%s", buff);
     fflush(io.out);
-    if (io.out == stdout)
-    {
-        return 0;
-    }
-    fclose(io.out);
     return 0;
 }
 
@@ -78,11 +73,6 @@ int type(Node *node, IOContext io)
         fprintf(io.out, "%s\n", file);
         free(file);
         fflush(io.out);
-        if (io.out == stdout)
-        {
-            return 0;
-        }
-        fclose(io.out);
         return 0;
     }
     fprintf(io.err, "%s: not found\n", get_Token_value(&node->args[1]));
@@ -208,20 +198,20 @@ int variable_handler(char var_name[])
     return 1;
 }
 
-int run(char *filepath, Node *node)
-{
-    if (node->arg_count > 1)
-    {
-        char exec_string[1024];
-        strcpy(exec_string, filepath);
-        for (int i = 1; i < node->arg_count; i++)
-        {
-            strcat(exec_string, " ");
-            strcat(exec_string, node->args[i].raw);
-        }
-        system(exec_string);
-        return 0;
-    }
-    system(filepath);
-    return 0;
-}
+// int run(char *filepath, Node *node)
+// {
+//     if (node->arg_count > 1)
+//     {
+//         char exec_string[1024];
+//         strcpy(exec_string, filepath);
+//         for (int i = 1; i < node->arg_count; i++)
+//         {
+//             strcat(exec_string, " ");
+//             strcat(exec_string, node->args[i].raw);
+//         }
+//         system(exec_string);
+//         return 0;
+//     }
+//     system(filepath);
+//     return 0;
+// }

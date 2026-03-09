@@ -21,6 +21,6 @@ int cd(Node *node, IOContext io);
 
 int variable_handler(char var_name[]);
 
-int run(char *filepath, Node *node);
+// int run(char *filepath, Node *node);
 
 #endif

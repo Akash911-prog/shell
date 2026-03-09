@@ -143,7 +143,7 @@ void exec_input(char *input)
         return;
     }
     expand(tree);
-    // print_ast(tree, 2);
+    print_ast(tree, 2);
     execute(tree);
     destroy_node(tree);
 }

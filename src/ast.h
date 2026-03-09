@@ -2,7 +2,7 @@
 #define AST_H
 
 #include "lexer.h"
-
+#include "iocontext.h"
 typedef enum
 {
     CMD_LINE,
@@ -24,6 +24,7 @@ typedef struct
 typedef struct Node
 {
     NodeType type; // node type
+    Function_Type cmd_type;
 
     // For NODE_COMMAND (leaf nodes)
     Token *args;         // Array of argument strings

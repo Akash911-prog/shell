@@ -13,6 +13,7 @@
 #ifdef _WIN32 // for windows
 #include <windows.h>
 #include <process.h>
+#include <io.h>
 
 #else // for unix
 #include <unistd.h>

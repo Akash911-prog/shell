@@ -3,10 +3,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <windows.h>
+#include <fileapi.h>
 #include "commands.h"
 #include "utils.h"
 #include "variables.h"
 #include "lexer.h"
+#include "run.h"
+#include <fcntl.h> // _O_WRONLY, _O_RDONLY
+#include <io.h>    // _open_osfhandle, _fdopen
+
+#define MAX_PIPE_BUFFER_SIZE 64 * 1000 * 1000 // 64 MB / megabytes
 
 // default
 IOContext default_io()
@@ -69,6 +75,63 @@ void apply_redirects(IOContext *io, Node *node)
     }
 }
 
+void close_redirects(IOContext *io)
+{
+    if (io->close_out && io->out != stdout)
+    {
+        fflush(io->out);
+        fclose(io->out);
+        io->out = stdout;
+        io->close_out = false;
+    }
+
+    if (io->close_in && io->in != stdin)
+    {
+        fclose(io->in);
+        io->in = stdin;
+        io->close_in = false;
+    }
+
+    if (io->close_err && io->err != stderr)
+    {
+        fflush(io->err);
+        fclose(io->err);
+        io->err = stderr;
+        io->close_err = false;
+    }
+}
+
+void make_pipe(IOContext *left_io, IOContext *right_io)
+{
+    char pipe_name[256];
+    static int pipe_id = 0;
+    snprintf(pipe_name, sizeof(pipe_name), "\\\\.\\pipe\\_%d_%d", GetCurrentProcessId(), pipe_id++);
+
+    HANDLE hRead = CreateNamedPipe(
+        pipe_name,
+        PIPE_ACCESS_INBOUND,
+        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+        1,
+        MAX_PIPE_BUFFER_SIZE,
+        MAX_PIPE_BUFFER_SIZE,
+        0,
+        NULL);
+
+    HANDLE hWrite = CreateFile(
+        pipe_name,
+        GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    left_io->out = _fdopen(_open_osfhandle((intptr_t)hWrite, _O_WRONLY), "w");
+    right_io->in = _fdopen(_open_osfhandle((intptr_t)hRead, _O_RDONLY), "r");
+    left_io->close_out = true;
+    right_io->close_in = true;
+}
+
 void execute_win(Node *node, IOContext io)
 {
     if (node == NULL)
@@ -83,20 +146,20 @@ void execute_win(Node *node, IOContext io)
 
     case PIPE:
     {
-        HANDLE read_h, write_h;
-        SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE};
-        CreatePipe(&read_h, &write_h, &sa, 0);
+        switch (node->left->cmd_type == node->right->cmd_type)
+        {
+        case true:
+            if (node->left->cmd_type == BUILT_IN)
+            {
+            }
+            break;
 
-        FILE *write_f = _fdopen(_open_osfhandle((intptr_t)write_h, 0), "w");
-        FILE *read_f = _fdopen(_open_osfhandle((intptr_t)read_h, 0), "r");
+        case false:
+            break;
 
-        IOContext left_io = {io.in, write_f, io.err};
-        execute_win(node->left, left_io);
-        fclose(write_f); // signals EOF to right side
-
-        IOContext right_io = {read_f, io.out, io.err};
-        execute_win(node->right, right_io);
-        fclose(read_f);
+        default:
+            break;
+        }
         break;
     }
 
@@ -108,13 +171,17 @@ void execute_win(Node *node, IOContext io)
         }
         bool command_found = find_and_run_builtin(node, io);
         if (command_found)
+        {
+            close_redirects(&io);
             return;
+        }
 
         char *filepath = find_file(node->args[0].raw);
         if (filepath != NULL)
         {
-            run(filepath, node);
+            run(filepath, node, &io);
             free(filepath);
+            close_redirects(&io);
             return;
         }
 
@@ -123,9 +190,11 @@ void execute_win(Node *node, IOContext io)
         {
             char buffer[1024];
             snprintf(buffer, sizeof(buffer), "%s%s%s", Variables.get("PWD"), PATH_SEP, (node->args[0].raw + 2));
-            system(buffer);
+            run(buffer, node, &io);
             return;
         }
+
+        close_redirects(&io);
 
         printf("%s: not found\n", node->args[0].raw);
         break;

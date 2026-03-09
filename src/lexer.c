@@ -153,6 +153,25 @@ void lex(char *data, TokenList *token_list)
                 continue;
             }
 
+            // STDERR REDIRECT APPEND 2>>
+            else if (data[i] == '2' && data[i + 1] == '>' && data[i + 2] == '>')
+            {
+                if (k > 0)
+                {
+                    token_list->tokens[j].raw[k] = '\0';
+                    token_list->tokens[j].type = TOKEN_WORD;
+                    token_list->tokens[j].position = j;
+                    j++;
+                    k = 0;
+                }
+                token_list->tokens[j].type = TOKEN_REDIRECT_ERR_APPEND;
+                strcpy(token_list->tokens[j].raw, "2>>");
+                token_list->tokens[j].position = j;
+                j++;
+                i += 3;
+                continue;
+            }
+
             // AND &&
             else if (data[i] == '&' && data[i + 1] == '&')
             {
@@ -198,25 +217,6 @@ void lex(char *data, TokenList *token_list)
                 token_list->tokens[j].raw[k++] = '(';
                 token_list->tokens[j].raw[k++] = '(';
                 i += 2;
-                continue;
-            }
-
-            // STDERR REDIRECT APPEND 2>>
-            else if (data[i] == '2' && data[i + 1] == '>' && data[i + 2] == '>')
-            {
-                if (k > 0)
-                {
-                    token_list->tokens[j].raw[k] = '\0';
-                    token_list->tokens[j].type = TOKEN_WORD;
-                    token_list->tokens[j].position = j;
-                    j++;
-                    k = 0;
-                }
-                token_list->tokens[j].type = TOKEN_REDIRECT_ERR_APPEND;
-                strcpy(token_list->tokens[j].raw, "2>>");
-                token_list->tokens[j].position = j;
-                j++;
-                i += 3;
                 continue;
             }
 

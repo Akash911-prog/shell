@@ -9,12 +9,6 @@
 
 #define MAX_COMMANDS 30
 
-typedef enum
-{
-    BUILT_IN,
-    EXTERNAL
-} Function_Type;
-
 typedef struct
 {
     char name[10];
@@ -31,4 +25,5 @@ extern Command *commands[MAX_COMMANDS];
 Command *get_command_info(char *name);
 bool find_and_run_builtin(Node *node, IOContext io);
 
+bool is_builtin(char *cmd_name);
 #endif
