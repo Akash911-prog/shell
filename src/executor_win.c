@@ -132,6 +132,21 @@ void make_pipe(IOContext *left_io, IOContext *right_io)
     right_io->close_in = true;
 }
 
+typedef struct
+{
+    Node *node;
+    IOContext io;
+} BuiltinThreadArgs;
+
+DWORD WINAPI builtin_thread_wrapper(LPVOID lpParam)
+{
+    BuiltinThreadArgs *args = (BuiltinThreadArgs *)lpParam;
+    find_and_run_builtin(args->node, args->io);
+    if (args->io.close_out && args->io.out != stdout)
+        fclose(args->io.out); // signal EOF to the reader thread
+    return 0;
+}
+
 void execute_win(Node *node, IOContext io)
 {
     if (node == NULL)
@@ -151,6 +166,20 @@ void execute_win(Node *node, IOContext io)
         case true:
             if (node->left->cmd_type == BUILT_IN)
             {
+                IOContext left_io = io;
+                IOContext right_io = io;
+
+                make_pipe(&left_io, &right_io);
+
+                BuiltinThreadArgs left_args = {node->left, left_io};
+                BuiltinThreadArgs right_args = {node->right, right_io};
+
+                HANDLE threads[2];
+                threads[0] = CreateThread(NULL, 0, builtin_thread_wrapper, &left_args, 0, NULL);
+                threads[1] = CreateThread(NULL, 0, builtin_thread_wrapper, &right_args, 0, NULL);
+                WaitForMultipleObjects(2, threads, TRUE, INFINITE);
+                CloseHandle(threads[0]);
+                CloseHandle(threads[1]);
             }
             break;
 

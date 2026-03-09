@@ -159,10 +159,6 @@ int cd(Node *node, IOContext io)
     return 1;
 }
 
-int cat(Node *node, IOContext io)
-{
-}
-
 int variable_handler(char var_name[])
 {
     // Check if there's actually a variable name after $
@@ -197,21 +193,3 @@ int variable_handler(char var_name[])
     printf("%s: Variable not found\n", var);
     return 1;
 }
-
-// int run(char *filepath, Node *node)
-// {
-//     if (node->arg_count > 1)
-//     {
-//         char exec_string[1024];
-//         strcpy(exec_string, filepath);
-//         for (int i = 1; i < node->arg_count; i++)
-//         {
-//             strcat(exec_string, " ");
-//             strcat(exec_string, node->args[i].raw);
-//         }
-//         system(exec_string);
-//         return 0;
-//     }
-//     system(filepath);
-//     return 0;
-// }
