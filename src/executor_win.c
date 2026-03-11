@@ -181,6 +181,13 @@ void execute_win(Node *node, IOContext io)
                 CloseHandle(threads[0]);
                 CloseHandle(threads[1]);
             }
+
+            else if (node->left->cmd_type == EXTERNAL)
+            {
+                run_piped_proccesses(node->left->args[0].raw, node->left, node->right->args[0].raw, node->right, &io);
+                // run both the proccesses in a os level pipe.
+            }
+
             break;
 
         case false:

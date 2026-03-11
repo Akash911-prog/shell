@@ -23,5 +23,8 @@
 #endif
 
 int run(char *filepath, Node *node, IOContext *io);
+int run_piped_proccesses(char *filepath_left, Node *node_left,
+                         char *filepath_right, Node *node_right,
+                         IOContext *io);
 
 #endif

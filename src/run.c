@@ -2,29 +2,16 @@
 
 #ifdef _WIN32
 
-int run(char *filepath, Node *node, IOContext *io)
+char *build_command_string(char *filepath, Node *node, IOContext *io)
 {
-    // startup info for the proccess
-    STARTUPINFO si = {sizeof(si)};
-    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW; // handles
-    si.hStdInput = (HANDLE)_get_osfhandle(_fileno(io->in));
-    si.hStdOutput = (HANDLE)_get_osfhandle(_fileno(io->out));
-    si.hStdError = (HANDLE)_get_osfhandle(_fileno(io->err));
-    si.wShowWindow = SW_HIDE;
-
-    SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE}; // TRUE = inheritable
-
-    PROCESS_INFORMATION pi;
-
     int total_len = strlen(filepath) + 1;
     for (int i = 1; i < node->arg_count; i++)
-        total_len += strlen(node->args[i].raw) * 2 + 4; // *2 for escaped quotes, +4 for space and outer quotes
-
+        total_len += strlen(node->args[i].raw) * 2 + 4;
     char *exec_string = malloc(total_len + 1);
     if (!exec_string)
     {
         fprintf(io->err, "malloc failed\n");
-        return 1;
+        return "";
     }
 
     strcpy(exec_string, filepath);
@@ -47,6 +34,24 @@ int run(char *filepath, Node *node, IOContext *io)
             strcat(exec_string, "\"");
         }
     }
+    return exec_string; // caller frees
+}
+
+int run(char *filepath, Node *node, IOContext *io)
+{
+    // startup info for the proccess
+    STARTUPINFO si = {sizeof(si)};
+    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW; // handles
+    si.hStdInput = (HANDLE)_get_osfhandle(_fileno(io->in));
+    si.hStdOutput = (HANDLE)_get_osfhandle(_fileno(io->out));
+    si.hStdError = (HANDLE)_get_osfhandle(_fileno(io->err));
+    si.wShowWindow = SW_HIDE;
+
+    SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE}; // TRUE = inheritable
+
+    PROCESS_INFORMATION pi;
+
+    char *exec_string = build_command_string(filepath, node, io);
 
     BOOL ok = CreateProcess(
         NULL,        // [1] executable name (NULL = parse from lpCommandLine)
@@ -90,6 +95,70 @@ int run(char *filepath, Node *node, IOContext *io)
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+    return 0;
+}
+
+int run_piped_proccesses(char *filepath_left, Node *node_left,
+                         char *filepath_right, Node *node_right,
+                         IOContext *io)
+{
+    HANDLE hRead, hWrite;
+    SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, TRUE}; // TRUE = inheritable
+
+    // create the pipe with inheritable handles
+    if (!CreatePipe(&hRead, &hWrite, &sa, 64 * 1024 * 1024)) // 64MB
+    {
+        fprintf(io->err, "CreatePipe failed: %lu\n", GetLastError());
+        return 1;
+    }
+
+    // left process: stdout = hWrite
+    STARTUPINFO si_left = {sizeof(si_left)};
+    si_left.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si_left.hStdInput = (HANDLE)_get_osfhandle(_fileno(io->in));
+    si_left.hStdOutput = hWrite; // <-- writes into pipe
+    si_left.hStdError = (HANDLE)_get_osfhandle(_fileno(io->err));
+    si_left.wShowWindow = SW_HIDE;
+
+    // right process: stdin = hRead
+    STARTUPINFO si_right = {sizeof(si_right)};
+    si_right.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si_right.hStdInput = hRead; // <-- reads from pipe
+    si_right.hStdOutput = (HANDLE)_get_osfhandle(_fileno(io->out));
+    si_right.hStdError = (HANDLE)_get_osfhandle(_fileno(io->err));
+    si_right.wShowWindow = SW_HIDE;
+
+    PROCESS_INFORMATION pi_left, pi_right;
+
+    // build command strings same way your run() does
+    // ... (extract this into a helper to avoid duplication)
+    char *cmd_left = build_command_string(filepath_left, node_left, io);
+    BOOL ok_left = CreateProcess(NULL, cmd_left, NULL, NULL, TRUE, 0, NULL, NULL, &si_left, &pi_left);
+
+    // CRITICAL: close hWrite in the parent after spawning left process
+    // otherwise right process never gets EOF even when left exits
+    CloseHandle(hWrite);
+
+    char *cmd_right = build_command_string(filepath_right, node_right, io);
+    BOOL ok_right = CreateProcess(NULL, cmd_right, NULL, NULL, TRUE, 0, NULL, NULL, &si_right, &pi_right);
+    CloseHandle(hRead); // parent doesn't need this either
+
+    // wait for both
+    HANDLE procs[2] = {pi_left.hProcess, pi_right.hProcess};
+    WaitForMultipleObjects(2, procs, TRUE, INFINITE);
+
+    DWORD exit_code;
+    GetExitCodeProcess(pi_right.hProcess, &exit_code); // typically care about right side's exit
+    char buffer[12];
+    snprintf(buffer, sizeof(buffer), "%lu", exit_code);
+    Variables.set("?", buffer);
+
+    CloseHandle(pi_left.hProcess);
+    CloseHandle(pi_left.hThread);
+    CloseHandle(pi_right.hProcess);
+    CloseHandle(pi_right.hThread);
+    free(cmd_left);
+    free(cmd_right);
     return 0;
 }
 
