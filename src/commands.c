@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <dirent.h>
+#include <sys/stat.h>
 #include "commands.h"
 #include "builtins.h"
 #include "utils.h"
@@ -192,4 +194,101 @@ int variable_handler(char var_name[])
 
     printf("%s: Variable not found\n", var);
     return 1;
+}
+
+static void ls_recursive(IOContext io, const char *path, bool show_hidden)
+{
+    DIR *directory = opendir(path);
+    if (directory == NULL)
+    {
+        fprintf(io.err, "cannot open directory '%s'\n", path);
+        return;
+    }
+
+    fprintf(io.out, "%s:\n", path);
+
+    struct dirent *entry;
+    char subdirs[256][MAX_PATH];
+    int subdir_count = 0;
+
+    while ((entry = readdir(directory)) != NULL)
+    {
+        // always skip . and ..
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        // skip dotfiles unless -a was passed
+        if (!show_hidden && entry->d_name[0] == '.')
+            continue;
+
+        char full_path[MAX_PATH];
+        snprintf(full_path, sizeof(full_path), "%s\\%s", path, entry->d_name);
+
+        bool is_dir = false;
+        struct stat st;
+        if (stat(full_path, &st) == 0)
+            is_dir = S_ISDIR(st.st_mode);
+
+        if (is_dir)
+        {
+            fprintf(io.out, "%s/\n", entry->d_name);
+            if (subdir_count < 256)
+                strncpy(subdirs[subdir_count++], full_path, MAX_PATH);
+        }
+        else
+            fprintf(io.out, "%s\n", entry->d_name);
+    }
+
+    closedir(directory);
+    fprintf(io.out, "\n");
+
+    for (int i = 0; i < subdir_count; i++)
+        ls_recursive(io, subdirs[i], show_hidden); // pass flag down
+}
+
+int ls(Node *node, IOContext io)
+{
+    bool recursive = false;
+    bool show_hidden = false;
+    char *target_path = ".";
+
+    for (size_t i = 1; i < node->arg_count; i++)
+    {
+        if (strcmp(node->args[i].raw, "-R") == 0)
+            recursive = true;
+        else if (strcmp(node->args[i].raw, "-a") == 0)
+            show_hidden = true;
+        else
+            target_path = node->args[i].raw;
+    }
+
+    if (recursive)
+    {
+        ls_recursive(io, target_path, show_hidden);
+    }
+    else
+    {
+        DIR *directory = opendir(target_path);
+        if (directory == NULL)
+        {
+            fprintf(io.err, "Directory couldn't be opened\n");
+            return 1;
+        }
+
+        struct dirent *entry;
+        while ((entry = readdir(directory)) != NULL)
+        {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            // skip dotfiles unless -a was passed
+            if (!show_hidden && entry->d_name[0] == '.')
+                continue;
+
+            fprintf(io.out, "%s\n", entry->d_name);
+        }
+
+        closedir(directory);
+    }
+    return 0;
 }
