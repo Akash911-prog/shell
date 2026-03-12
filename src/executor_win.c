@@ -9,10 +9,6 @@
 #include "variables.h"
 #include "lexer.h"
 #include "run.h"
-#include <fcntl.h> // _O_WRONLY, _O_RDONLY
-#include <io.h>    // _open_osfhandle, _fdopen
-
-#define MAX_PIPE_BUFFER_SIZE 64 * 1000 * 1000 // 64 MB / megabytes
 
 // default
 IOContext default_io()
@@ -101,52 +97,6 @@ void close_redirects(IOContext *io)
     }
 }
 
-void make_pipe(IOContext *left_io, IOContext *right_io)
-{
-    char pipe_name[256];
-    static int pipe_id = 0;
-    snprintf(pipe_name, sizeof(pipe_name), "\\\\.\\pipe\\_%d_%d", GetCurrentProcessId(), pipe_id++);
-
-    HANDLE hRead = CreateNamedPipe(
-        pipe_name,
-        PIPE_ACCESS_INBOUND,
-        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-        1,
-        MAX_PIPE_BUFFER_SIZE,
-        MAX_PIPE_BUFFER_SIZE,
-        0,
-        NULL);
-
-    HANDLE hWrite = CreateFile(
-        pipe_name,
-        GENERIC_WRITE,
-        0,
-        NULL,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL);
-
-    left_io->out = _fdopen(_open_osfhandle((intptr_t)hWrite, _O_WRONLY), "w");
-    right_io->in = _fdopen(_open_osfhandle((intptr_t)hRead, _O_RDONLY), "r");
-    left_io->close_out = true;
-    right_io->close_in = true;
-}
-
-typedef struct
-{
-    Node *node;
-    IOContext io;
-} BuiltinThreadArgs;
-
-DWORD WINAPI builtin_thread_wrapper(LPVOID lpParam)
-{
-    BuiltinThreadArgs *args = (BuiltinThreadArgs *)lpParam;
-    find_and_run_builtin(args->node, args->io);
-    if (args->io.close_out && args->io.out != stdout)
-        fclose(args->io.out); // signal EOF to the reader thread
-    return 0;
-}
-
 void execute_win(Node *node, IOContext io)
 {
     if (node == NULL)
@@ -161,25 +111,11 @@ void execute_win(Node *node, IOContext io)
 
     case PIPE:
     {
-        switch (node->left->cmd_type == node->right->cmd_type)
+        if (node->left->cmd_type == node->right->cmd_type)
         {
-        case true:
             if (node->left->cmd_type == BUILT_IN)
             {
-                IOContext left_io = io;
-                IOContext right_io = io;
-
-                make_pipe(&left_io, &right_io);
-
-                BuiltinThreadArgs left_args = {node->left, left_io};
-                BuiltinThreadArgs right_args = {node->right, right_io};
-
-                HANDLE threads[2];
-                threads[0] = CreateThread(NULL, 0, builtin_thread_wrapper, &left_args, 0, NULL);
-                threads[1] = CreateThread(NULL, 0, builtin_thread_wrapper, &right_args, 0, NULL);
-                WaitForMultipleObjects(2, threads, TRUE, INFINITE);
-                CloseHandle(threads[0]);
-                CloseHandle(threads[1]);
+                run_piped_builtin(io, node);
             }
 
             else if (node->left->cmd_type == EXTERNAL)
@@ -187,15 +123,12 @@ void execute_win(Node *node, IOContext io)
                 run_piped_proccesses(node->left->args[0].raw, node->left, node->right->args[0].raw, node->right, &io);
                 // run both the proccesses in a os level pipe.
             }
-
-            break;
-
-        case false:
-            break;
-
-        default:
-            break;
         }
+        else
+        {
+            run_piped_hybrid(io, node);
+        }
+
         break;
     }
 

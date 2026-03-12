@@ -2,6 +2,54 @@
 
 #ifdef _WIN32
 
+#define MAX_PIPE_BUFFER_SIZE 64 * 1000 * 1000 // 64 MB / megabytes
+
+typedef struct
+{
+    Node *node;
+    IOContext io;
+} BuiltinThreadArgs;
+
+DWORD WINAPI builtin_thread_wrapper(LPVOID lpParam)
+{
+    BuiltinThreadArgs *args = (BuiltinThreadArgs *)lpParam;
+    find_and_run_builtin(args->node, args->io);
+    if (args->io.close_out && args->io.out != stdout)
+        fclose(args->io.out); // signal EOF to the reader thread
+    return 0;
+}
+
+void make_pipe(IOContext *left_io, IOContext *right_io)
+{
+    char pipe_name[256];
+    static int pipe_id = 0;
+    snprintf(pipe_name, sizeof(pipe_name), "\\\\.\\pipe\\_%d_%d", GetCurrentProcessId(), pipe_id++);
+
+    HANDLE hRead = CreateNamedPipe(
+        pipe_name,
+        PIPE_ACCESS_INBOUND,
+        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+        1,
+        MAX_PIPE_BUFFER_SIZE,
+        MAX_PIPE_BUFFER_SIZE,
+        0,
+        NULL);
+
+    HANDLE hWrite = CreateFile(
+        pipe_name,
+        GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    left_io->out = _fdopen(_open_osfhandle((intptr_t)hWrite, _O_WRONLY), "w");
+    right_io->in = _fdopen(_open_osfhandle((intptr_t)hRead, _O_RDONLY), "r");
+    left_io->close_out = true;
+    right_io->close_in = true;
+}
+
 char *build_command_string(char *filepath, Node *node, IOContext *io)
 {
     int total_len = strlen(filepath) + 1;
@@ -98,6 +146,25 @@ int run(char *filepath, Node *node, IOContext *io)
     return 0;
 }
 
+int run_piped_builtin(IOContext io, Node *node)
+{
+    IOContext left_io = io;
+    IOContext right_io = io;
+
+    make_pipe(&left_io, &right_io);
+
+    BuiltinThreadArgs left_args = {node->left, left_io};
+    BuiltinThreadArgs right_args = {node->right, right_io};
+
+    HANDLE threads[2];
+    threads[0] = CreateThread(NULL, 0, builtin_thread_wrapper, &left_args, 0, NULL);
+    threads[1] = CreateThread(NULL, 0, builtin_thread_wrapper, &right_args, 0, NULL);
+    WaitForMultipleObjects(2, threads, TRUE, INFINITE);
+    CloseHandle(threads[0]);
+    CloseHandle(threads[1]);
+    return 0;
+}
+
 int run_piped_proccesses(char *filepath_left, Node *node_left,
                          char *filepath_right, Node *node_right,
                          IOContext *io)
@@ -159,6 +226,106 @@ int run_piped_proccesses(char *filepath_left, Node *node_left,
     CloseHandle(pi_right.hThread);
     free(cmd_left);
     free(cmd_right);
+    return 0;
+}
+
+int run_piped_hybrid(IOContext io, Node *node)
+{
+    IOContext left_io = io;
+    IOContext right_io = io;
+    make_pipe(&left_io, &right_io);
+
+    HANDLE threads[2];
+    HANDLE processes[2];
+    int proc_count = 0;
+    int thread_count = 0;
+
+    // heap-allocate so thread args outlive the loop iteration
+    BuiltinThreadArgs *args_pool[2] = {NULL, NULL};
+
+    Node *current_node = node->left;
+    IOContext current_io = left_io; // left side writes into pipe
+
+    for (size_t i = 0; i < 2; i++)
+    {
+        if (current_node->cmd_type == BUILT_IN)
+        {
+            args_pool[i] = malloc(sizeof(BuiltinThreadArgs));
+            args_pool[i]->io = current_io;
+            args_pool[i]->node = current_node;
+
+            threads[thread_count++] = CreateThread(
+                NULL, 0, builtin_thread_wrapper, args_pool[i], 0, NULL);
+        }
+        else if (current_node->cmd_type == EXTERNAL)
+        {
+            STARTUPINFOA si = {sizeof(si)};
+            si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+            si.wShowWindow = SW_HIDE;
+
+            // left  (i==0): stdin  = original io.in,  stdout = pipe write end
+            // right (i==1): stdin  = pipe read end,   stdout = original io.out
+            if (i == 0)
+            {
+                si.hStdInput = (HANDLE)_get_osfhandle(_fileno(current_io.in));
+                si.hStdOutput = (HANDLE)_get_osfhandle(_fileno(left_io.out)); // write into pipe
+            }
+            else
+            {
+                si.hStdInput = (HANDLE)_get_osfhandle(_fileno(right_io.in)); // read from pipe
+                si.hStdOutput = (HANDLE)_get_osfhandle(_fileno(current_io.out));
+            }
+            si.hStdError = (HANDLE)_get_osfhandle(_fileno(current_io.err));
+
+            // make pipe handles inheritable
+            SetHandleInformation(si.hStdInput, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+            SetHandleInformation(si.hStdOutput, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+
+            PROCESS_INFORMATION pi = {0};
+            char *cmd = build_command_string(
+                current_node->args[0].raw, current_node, &current_io);
+
+            BOOL ok = CreateProcessA(
+                NULL, cmd, NULL, NULL,
+                TRUE, // inherit handles
+                0, NULL, NULL, &si, &pi);
+
+            if (ok)
+            {
+                CloseHandle(pi.hThread);
+                processes[proc_count++] = pi.hProcess;
+            }
+            free(cmd);
+        }
+
+        // advance to right side
+        current_node = node->right;
+        current_io = right_io; // right side reads from pipe
+    }
+
+    // close parent's copies of the pipe ends so children see EOF
+    if (left_io.close_out && left_io.out)
+        fclose(left_io.out);
+    if (right_io.close_in && right_io.in)
+        fclose(right_io.in);
+
+    // wait for everyone
+    if (thread_count)
+        WaitForMultipleObjects(thread_count, threads, TRUE, INFINITE);
+    if (proc_count)
+        WaitForMultipleObjects(proc_count, processes, TRUE, INFINITE);
+
+    // cleanup
+    for (int i = 0; i < 2; i++)
+    {
+        if (args_pool[i])
+            free(args_pool[i]);
+    }
+    for (int i = 0; i < thread_count; i++)
+        CloseHandle(threads[i]);
+    for (int i = 0; i < proc_count; i++)
+        CloseHandle(processes[i]);
+
     return 0;
 }
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <windows.h>
 
 static const char *token_type_str(Type type)
 {
@@ -50,36 +51,40 @@ void print_ast(Node *node, int indent)
     if (!node)
         return;
 
+    FILE *log_file = fopen(".log", "a");
+
+    fprintf(log_file, "\n\nnew log starts here");
+
     // Print indentation
     for (int i = 0; i < indent; i++)
-        printf("  ");
+        fprintf(log_file, "  ");
 
     // Print node type
     switch (node->type)
     {
     case CMD_LINE:
-        printf("CMD_LINE\n");
+        fprintf(log_file, "CMD_LINE\n");
         break;
     case PIPE:
-        printf("PIPE\n");
+        fprintf(log_file, "PIPE\n");
         break;
     case CMD:
-        printf("COMMAND\n");
+        fprintf(log_file, "COMMAND\n");
         break;
     case SUB_COMMANDS:
-        printf("SUBSHELL\n");
+        fprintf(log_file, "SUBSHELL\n");
         break;
     case AND:
-        printf("AND\n");
+        fprintf(log_file, "AND\n");
         break;
     case OR:
-        printf("OR\n");
+        fprintf(log_file, "OR\n");
         break;
     case ASSIGNMENT:
-        printf("ASSIGNMENT\n");
+        fprintf(log_file, "ASSIGNMENT\n");
         break;
     default:
-        printf("UNKNOWN\n");
+        fprintf(log_file, "UNKNOWN\n");
         break;
     }
 
@@ -89,8 +94,8 @@ void print_ast(Node *node, int indent)
         for (int i = 0; i < node->arg_count; i++)
         {
             for (int j = 0; j < indent + 1; j++)
-                printf("  ");
-            printf("ARG: %s (type: %s)\n", get_Token_value(&node->args[i]), token_type_str(node->args[i].type));
+                fprintf(log_file, "  ");
+            fprintf(log_file, "ARG: %s (type: %s)\n", get_Token_value(&node->args[i]), token_type_str(node->args[i].type));
         }
     }
 
@@ -98,22 +103,24 @@ void print_ast(Node *node, int indent)
     for (int i = 0; i < node->redirect_count; i++)
     {
         for (int j = 0; j < indent + 1; j++)
-            printf("  ");
-        printf("REDIRECT (%d) -> %s\n", node->redirects[i].type, node->redirects[i].filename);
+            fprintf(log_file, "   ");
+        fprintf(log_file, "REDIRECT (%d) -> %s\n", node->redirects[i].type, node->redirects[i].filename);
     }
 
     // Print background flag
     if (node->background)
     {
         for (int j = 0; j < indent + 1; j++)
-            printf("  ");
-        printf("BACKGROUND: true\n");
+            fprintf(log_file, "  ");
+        fprintf(log_file, "BACKGROUND: true\n");
     }
 
     // Recursively print children
     print_ast(node->left, indent + 1);
     print_ast(node->right, indent + 1);
     print_ast(node->body, indent + 1);
+
+    fclose(log_file);
 }
 
 void tokenize(char *input, TokenList *tokens)
