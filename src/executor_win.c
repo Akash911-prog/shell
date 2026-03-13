@@ -10,6 +10,8 @@
 #include "lexer.h"
 #include "run.h"
 
+#define MAX_PIPE_BUFFER_SIZE 64 * 1000 * 1000 // 64 MB / megabytes
+
 // default
 IOContext default_io()
 {
