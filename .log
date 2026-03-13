@@ -1,0 +1,47 @@
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+
+
+new log starts here      COMMAND
+        ARG: ls (type: WORD)
+        ARG: -R (type: WORD)
+
+
+new log starts here      COMMAND
+        ARG: fzf (type: WORD)
+
+
+new log starts here    PIPE
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+
+
+new log starts here    COMMAND
+      ARG: ls (type: WORD)
+      ARG: -R (type: WORD)
+      ARG: -a (type: WORD)
+
+
+new log starts here    COMMAND
+      ARG: clear (type: WORD)
