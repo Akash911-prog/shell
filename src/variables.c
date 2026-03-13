@@ -14,7 +14,7 @@ static size_t hash(const char *data, size_t capacity)
 {
     uint64_t hash = FNV_OFFSET_BASIS;
     int c;
-    while ((c = *data++) == '\0')
+    while ((c = *data++) != '\0')
     {
         hash = hash ^ c;
         hash = hash * FNV_PRIME;

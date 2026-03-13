@@ -184,7 +184,7 @@ void execute_win(Node *node, IOContext io)
         break;
 
     case ASSIGNMENT:
-        // TODO: handle assignment
+        Variables.set(node->args[0].raw, node->args[0].value);
         break;
 
     default:
